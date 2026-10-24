@@ -114,7 +114,7 @@ def main():
     parser.add_argument("--mode", type=str, choices=["tv", "mobile", "universal"], default="tv", help="Conversion target mode")
     parser.add_argument("--banner", type=str, metavar="IMAGE_PATH", help="Custom 16:9 banner image for TV")
     parser.add_argument("--orientation", type=str, help="Override screen orientation")
-    parser.add_argument("--pure-tv", action="store_true", help="Pure TV mode (removes phone LAUNCHER category)")
+    parser.add_argument("--pure-tv", action=argparse.BooleanOptionalAction, default=None, help="Pure TV mode (default true for TV: removes phone LAUNCHER category)")
     parser.add_argument("--no-ai", action="store_true", help="Disable Gemini AI content generation")
     parser.add_argument("--ai-audit", type=str, metavar="APK_PATH", help="Run Gemini 4 Argon big-screen compatibility audit")
     parser.add_argument("--ai-copy", type=str, metavar="APK_PATH", help="Generate Gemini 4 Argon Play Store listing copy")

@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Callable
 
 DEFAULT_FINGERPRINT_CANDIDATES = [
+    Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh",
     Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin/skills/android-reverse-engineering/scripts/fingerprint.sh"),
     Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin/plugins/android-reverse-engineering/skills/android-reverse-engineering/scripts/fingerprint.sh"),
     Path("/home/alpesh/.apk_tv_converter/tools/fingerprint.sh"),

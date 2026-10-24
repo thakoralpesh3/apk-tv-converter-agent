@@ -419,4 +419,38 @@ def test_layout_desktop_cursor_injection_on_bare_layout(tmp_path):
     assert has_mouse is True, "tvMouseContainer must be injected into activity_home.xml"
 
 
+def test_native_tv_cursor_builder(tmp_path):
+    from core.cursor_builder import TVCursorBuilder
+    from core.manifest_transformer import ManifestTransformer
+
+    tools = TVCursorBuilder.get_tool_paths()
+    assert tools["android_jar"].is_file()
+    assert tools["r8_jar"].is_file()
+
+    dex = TVCursorBuilder.compile_dex()
+    assert dex.is_file()
+    assert dex.stat().st_size > 5000
+
+    manifest_file = tmp_path / "AndroidManifest.xml"
+    manifest_file.write_text("""<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.test.cursorapp">
+    <application android:name=".MyApp">
+        <activity android:name=".MainActivity" />
+    </application>
+</manifest>""", encoding="utf-8")
+    (tmp_path / "classes.dex").write_bytes(b"dummy dex 1")
+
+    transformer = ManifestTransformer(manifest_file)
+    res = TVCursorBuilder.inject(tmp_path, transformer)
+    assert res["status"] == "ok"
+    assert res["injected_dex"] == "classes2.dex"
+    assert (tmp_path / "classes2.dex").is_file()
+    assert (tmp_path / "classes2.dex").stat().st_size == dex.stat().st_size
+
+    manifest_content = manifest_file.read_text(encoding="utf-8")
+    assert "com.tv.cursor.TvCursorInitProvider" in manifest_content
+    assert "com.test.cursorapp.tvcursorinitprovider" in manifest_content
+
+
+
 

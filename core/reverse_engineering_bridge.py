@@ -18,9 +18,9 @@ class ReverseEngineeringBridge:
     def get_fingerprint_script(cls) -> Optional[Path]:
         """Locates the fingerprint.sh script from the android-reverse-engineering skill."""
         candidates = [
+            Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh",
             DEFAULT_SKILL_SCRIPT,
-            Path("/home/alpesh/.apk_tv_converter/tools/fingerprint.sh"),
-            Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh"
+            Path("/home/alpesh/.apk_tv_converter/tools/fingerprint.sh")
         ]
         for candidate in candidates:
             if candidate.is_file() and os.access(candidate, os.X_OK):
@@ -65,7 +65,7 @@ class ReverseEngineeringBridge:
             "jadx_ready": jadx_bin is not None,
             "jadx_path": str(jadx_bin) if jadx_bin else None,
             "jadx_version": jadx_version,
-            "skill_plugin_installed": Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin").is_dir()
+            "skill_plugin_installed": Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin").is_dir() or (Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh").is_file()
         }
 
     @classmethod
