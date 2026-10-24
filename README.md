@@ -56,10 +56,17 @@ Whenever changes or improvements are made by Antigravity or yourself, they can b
    ```
    Monitors filesystem events and automatically pushes to GitHub origin main.
 4. **Web Studio Button**: Click the **"Sync GitHub"** button in the Web Studio header for instant 1-click cloud sync.
+5. **Systemd Autonomous Sync Service**: Runs automatically in the background via `apk-tv-converter-sync.service` to push any changes made by Antigravity or the user to GitHub in real time.
 
 ---
 
 ## 🚀 Key Features
+
+1. **🖱️ Native Android TV Desktop Mouse Cursor Engine (`core/cursor_builder.py`)**:
+   - **Bytecode-Level Multidex Injection (`classesN.dex`)**: Automatically compiles Java sources (`TvDesktopCursorOverlay.java` and `TvCursorInitProvider.java`) with D8 and injects `classes2.dex` and ContentProvider declaration with zero smali decompilation overhead.
+   - **Hardware TV Remote Interception**: Wraps window callbacks on resumed activities. D-Pad keys smoothly move a desktop arrow cursor on 16:9 screens with acceleration.
+   - **Synthetic Touch Event Dispatch**: D-Pad Center / OK synthesizes real hardware `MotionEvent.ACTION_DOWN` and `ACTION_UP` touch events directly at the cursor tip coordinates, making non-TV apps (Flutter, React Native, Jetpack Compose, WebViews, Canvas) fully operable with a standard TV remote control.
+   - **Pure TV Default**: Converted apps automatically launch directly into Android TV mode (`pure_tv=True`), removing phone launcher duplicates.
 
 1. **🔬 Android Reverse Engineering Triage (`core/re_analyzer.py`)**:
    - Zero-dependency Phase 0 architecture fingerprinting (`fingerprint.sh`).
