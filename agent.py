@@ -7,6 +7,7 @@ Powered by Gemini 4 Argon AI Content Engine.
 
 import sys
 import os
+import subprocess
 import argparse
 from pathlib import Path
 from rich.console import Console
@@ -196,7 +197,6 @@ def main():
         return
 
     if args.open_output:
-        import subprocess
         subprocess.run(["xdg-open", str(DEFAULT_OUTPUT_DIR)])
         return
 
@@ -241,7 +241,6 @@ def main():
         import socket
         import webbrowser
         import time
-        import subprocess
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_running = (s.connect_ex(('127.0.0.1', args.port)) == 0)
