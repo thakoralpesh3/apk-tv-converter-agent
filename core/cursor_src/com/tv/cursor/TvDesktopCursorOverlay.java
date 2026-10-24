@@ -64,13 +64,14 @@ public class TvDesktopCursorOverlay {
     }
 
     private static void attachCursorToActivity(final Activity activity) {
-        if (activity == null || activity.isFinishing()) return;
-        final Window window = activity.getWindow();
-        if (window == null) return;
+        try {
+            if (activity == null || activity.isFinishing()) return;
+            final Window window = activity.getWindow();
+            if (window == null) return;
 
-        final View decorViewRaw = window.getDecorView();
-        if (!(decorViewRaw instanceof ViewGroup)) return;
-        final ViewGroup decorView = (ViewGroup) decorViewRaw;
+            final View decorViewRaw = window.getDecorView();
+            if (!(decorViewRaw instanceof ViewGroup)) return;
+            final ViewGroup decorView = (ViewGroup) decorViewRaw;
 
         // Check if overlay is already attached
         View existing = decorView.findViewWithTag(TAG_CURSOR_OVERLAY);
@@ -289,6 +290,9 @@ public class TvDesktopCursorOverlay {
                 if (originalCallback != null) originalCallback.onActionModeFinished(mode);
             }
         });
+        } catch (Throwable t) {
+            android.util.Log.e("TvDesktopCursorOverlay", "Failed to attach cursor overlay to activity: " + t.getMessage(), t);
+        }
     }
 
     /**
