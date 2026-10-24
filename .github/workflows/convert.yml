@@ -1,0 +1,109 @@
+name: Convert APK to Android TV / Mobile
+
+on:
+  workflow_dispatch:
+    inputs:
+      apk_url:
+        description: 'Direct URL to download the APK to convert (or leave empty to use sample)'
+        required: false
+        default: ''
+      target_mode:
+        description: 'Target conversion mode'
+        required: true
+        default: 'tv'
+        type: choice
+        options:
+          - tv
+          - mobile
+          - universal
+      run_ai_audit:
+        description: 'Run Gemini 4 Argon Big-Screen Ergonomics Audit'
+        required: false
+        default: true
+        type: boolean
+      run_ai_copy:
+        description: 'Generate Google Play Store / TV Listing Copy'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  convert:
+    name: Convert APK (${{ github.event.inputs.target_mode }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Set up Java OpenJDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install System Dependencies & Tools
+        run: |
+          sudo apt-get update && sudo apt-get install -y aapt zipalign curl wget unzip
+          mkdir -p ~/.apk_tv_converter/tools
+          # Download official apktool jar
+          wget -q https://github.com/iBotPeaches/Apktool/releases/download/v2.9.3/apktool_2.9.3.jar -O ~/.apk_tv_converter/tools/apktool.jar
+          # Download uber-apk-signer jar
+          wget -q https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar -O ~/.apk_tv_converter/tools/uber-apk-signer.jar
+          # Download Android framework jar
+          wget -q https://github.com/Sable/android-platforms/raw/master/android-34/android.jar -O ~/.apk_tv_converter/tools/android.jar || true
+          # Create java symlink
+          ln -sf $(which java) ~/.apk_tv_converter/tools/java
+
+      - name: Install Python Requirements
+        run: |
+          pip install -r requirements.txt
+
+      - name: Prepare Input APK
+        run: |
+          mkdir -p input_apks output_apks
+          if [ -n "${{ github.event.inputs.apk_url }}" ]; then
+            echo "Downloading APK from: ${{ github.event.inputs.apk_url }}"
+            curl -L "${{ github.event.inputs.apk_url }}" -o input_apks/target.apk
+          else
+            echo "Using bundled sample APK..."
+            cp samples/sample-smartphone.apk input_apks/target.apk
+          fi
+
+      - name: Execute Conversion Pipeline
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 agent.py --convert input_apks/target.apk --mode ${{ github.event.inputs.target_mode }} --output-dir output_apks
+
+      - name: Run AI TV Audit (Optional)
+        if: ${{ github.event.inputs.run_ai_audit }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          CONVERTED_APK=$(ls output_apks/*.apk | head -n 1)
+          if [ -f "$CONVERTED_APK" ]; then
+            python3 agent.py --ai-audit "$CONVERTED_APK" --output-dir output_apks || echo "AI Audit skipped or ran with heuristics"
+          fi
+
+      - name: Generate AI Store Listing (Optional)
+        if: ${{ github.event.inputs.run_ai_copy }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          CONVERTED_APK=$(ls output_apks/*.apk | head -n 1)
+          if [ -f "$CONVERTED_APK" ]; then
+            python3 agent.py --ai-copy "$CONVERTED_APK" --mode ${{ github.event.inputs.target_mode }} --output-dir output_apks || echo "AI Copy skipped or ran with heuristics"
+          fi
+
+      - name: Upload Converted APK & Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: converted-apk-${{ github.event.inputs.target_mode }}-${{ github.run_number }}
+          path: output_apks/
+          retention-days: 14

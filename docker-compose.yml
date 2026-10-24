@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  apk-tv-converter:
+    build: .
+    ports:
+      - "8877:8877"
+    volumes:
+      - ./output:/app/APK_TV_Converter_Output
+      - ./dropzone:/app/APK_TV_Converter_Dropzone
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: unless-stopped
