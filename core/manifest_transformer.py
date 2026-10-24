@@ -146,7 +146,9 @@ class ManifestTransformer:
         for feat in self.root.findall("uses-feature"):
             name = feat.attrib.get(_a("name"))
             if name:
-                if name in features_to_relax or any(name.startswith(p) for p in ("android.hardware.camera", "android.hardware.sensor", "android.hardware.touchscreen")):
+                if name.startswith("android.hardware.") and name not in ("android.hardware.gamepad", "android.hardware.screen.landscape"):
+                    feat.attrib[_a("required")] = "false"
+                elif name in features_to_relax:
                     feat.attrib[_a("required")] = "false"
 
         # 2. Essential TV optional features MUST be explicitly declared optional
@@ -158,7 +160,9 @@ class ManifestTransformer:
             "android.hardware.camera",
             "android.hardware.camera.autofocus",
             "android.hardware.microphone",
+            "android.hardware.location",
             "android.hardware.location.gps",
+            "android.hardware.location.network",
             "android.hardware.wifi",
             "android.hardware.bluetooth",
             "android.hardware.screen.portrait",
@@ -189,11 +193,9 @@ class ManifestTransformer:
         supports_screens.attrib[_a("resizeable")] = "true"
         changes.append("Configured <supports-screens> for 16:9 widescreen big-screen display")
 
-        # 1. Leanback feature declaration
-        # For pure TV it's required=true, for broad compatibility required=false
-        leanback_req = True if pure_tv else False
-        self._ensure_uses_feature("android.software.leanback", required=leanback_req)
-        changes.append(f"Set android.software.leanback required={leanback_req}")
+        # 1. Leanback feature declaration: required=false allows installation on ALL TV devices and boxes
+        self._ensure_uses_feature("android.software.leanback", required=False)
+        changes.append("Set android.software.leanback required=false (universal TV device compatibility)")
 
         # 2. Relax touchscreen and other mobile hardware requirements
         self._relax_mobile_hardware_features()
