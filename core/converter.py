@@ -21,7 +21,7 @@ from core.ai_content_engine import GeminiAIContentEngine
 from core.re_analyzer import ReverseEngineeringAnalyzer
 from core.cursor_builder import TVCursorBuilder
 
-DEFAULT_OUTPUT_DIR = Path("/home/alpesh/APK_TV_Converter_Output")
+DEFAULT_OUTPUT_DIR = Path(os.environ.get("APK_OUTPUT_DIR", Path.home() / "APK_TV_Converter_Output"))
 
 def calculate_sha256(file_path: Path) -> str:
     sha256 = hashlib.sha256()
@@ -33,7 +33,11 @@ def calculate_sha256(file_path: Path) -> str:
 class APKCrossConverter:
     def __init__(self, output_dir: Optional[Path] = None):
         self.output_dir = output_dir or DEFAULT_OUTPUT_DIR
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            self.output_dir = Path(__file__).resolve().parent.parent / "output"
+            self.output_dir.mkdir(parents=True, exist_ok=True)
         self.engine = APKEngine()
         self.re_analyzer = ReverseEngineeringAnalyzer()
 
