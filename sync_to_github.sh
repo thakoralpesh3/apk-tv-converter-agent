@@ -4,7 +4,7 @@
 
 set -e
 
-REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 cd "$REPO_DIR"
 
 CUSTOM_MSG="$1"
