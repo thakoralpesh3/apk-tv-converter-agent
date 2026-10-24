@@ -14,12 +14,16 @@ import android.net.Uri;
 public class TvCursorInitProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
-        Context context = getContext();
-        if (context != null) {
-            Context appCtx = context.getApplicationContext();
-            if (appCtx instanceof Application) {
-                TvDesktopCursorOverlay.init((Application) appCtx);
+        try {
+            Context context = getContext();
+            if (context != null) {
+                Context appCtx = context.getApplicationContext();
+                if (appCtx instanceof Application) {
+                    TvDesktopCursorOverlay.init((Application) appCtx);
+                }
             }
+        } catch (Throwable t) {
+            android.util.Log.e("TvCursorInitProvider", "Failed to initialize TV cursor overlay (non-fatal): " + t.getMessage(), t);
         }
         return true;
     }
