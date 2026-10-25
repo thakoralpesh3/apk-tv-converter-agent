@@ -32,16 +32,19 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Universal Native Android TV Desktop Mouse Cursor Engine.
- * Injected at bytecode level to display an active desktop mouse pointer on 16:9 TV screens.
  * Features:
- *  - Multi-channel click delivery (SOURCE_MOUSE, SOURCE_TOUCHSCREEN, direct performClick & focus)
- *  - Continuous focus synchronization (highlights TV elements under the cursor)
- *  - Self-healing Window.Callback interception (survives AppCompat / Compose / dynamic activity callbacks)
+ *  - Native Touch-Event Lifecycle (Accurate DOWN -> MOVE -> UP with human press duration)
+ *  - Full Jetpack Compose & Android View interaction (single clean channel, zero cancelation)
+ *  - Multi-window & Dialog Support (targets the active topmost dialog or window via WindowManagerGlobal)
+ *  - Hold-to-drag scrolling & scrub bar seek navigation
  *  - Dual-mode Mouse Toggle (Press MENU / PLAY_PAUSE to switch between Mouse Mode & D-Pad Mode)
- *  - Enforces horizontal 16:9 orientation across smartphone apps (including Jetpack Compose & JioTV)
+ *  - Built-in Smartphone Compatibility & Auto-Bypass for JioTV & streaming apps
  */
 public class TvDesktopCursorOverlay {
     private static final String TAG_CURSOR_OVERLAY = "tv_desktop_cursor_overlay_tag";
@@ -55,10 +58,14 @@ public class TvDesktopCursorOverlay {
         if (sInitialized || application == null) return;
         sInitialized = true;
 
+        // 1. Proactively disable app security/debug restrictions (e.g. JioTV SecurityUtils)
+        bypassAppSecurityRestrictions();
+
         application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
                 enforceLandscape(activity);
+                handleSpecialAppStartup(activity);
             }
 
             @Override
@@ -70,6 +77,7 @@ public class TvDesktopCursorOverlay {
             public void onActivityResumed(Activity activity) {
                 enforceLandscape(activity);
                 attachCursorToActivity(activity);
+                handleSpecialAppStartup(activity);
             }
 
             @Override
@@ -86,10 +94,51 @@ public class TvDesktopCursorOverlay {
         });
     }
 
+    private static void bypassAppSecurityRestrictions() {
+        try {
+            Class<?> secClass = Class.forName("com.jio.jioplay.tv.utils.SecurityUtils");
+            Field isDebugField = secClass.getDeclaredField("isDebug");
+            isDebugField.setAccessible(true);
+            isDebugField.setBoolean(null, true);
+        } catch (Throwable ignored) {}
+    }
+
+    private static void handleSpecialAppStartup(final Activity activity) {
+        if (activity == null || activity.isFinishing()) return;
+        String name = activity.getClass().getName();
+
+        // JioTV Permission / Onboarding Auto-Progression
+        if (name.contains("PermissionActivity")) {
+            sMainHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (activity.isFinishing()) return;
+                    try {
+                        // If compatibility warning dialog is visible, dismiss or auto-confirm
+                        ViewGroup top = getTopmostDecorView(activity);
+                        if (top != null && top != activity.getWindow().peekDecorView()) {
+                            int okId = activity.getResources().getIdentifier("btnDialogPositive", "id", activity.getPackageName());
+                            if (okId != 0) {
+                                View okBtn = top.findViewById(okId);
+                                if (okBtn != null && okBtn.isClickable()) {
+                                    okBtn.performClick();
+                                }
+                            }
+                        }
+
+                        // Invoke proceedApplication to bypass blocks and start HomeActivity
+                        Method proceedMethod = activity.getClass().getDeclaredMethod("proceedApplication");
+                        proceedMethod.setAccessible(true);
+                        proceedMethod.invoke(activity);
+                    } catch (Throwable ignored) {}
+                }
+            }, 350);
+        }
+    }
+
     private static void enforceLandscape(Activity activity) {
         if (activity == null) return;
         try {
-            // Overrides hardcoded portrait calls from smartphone code (e.g. JioTV HomeActivity)
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         } catch (Throwable ignored) {}
     }
@@ -133,6 +182,35 @@ public class TvDesktopCursorOverlay {
                keyCode == KeyEvent.KEYCODE_PROG_RED;
     }
 
+    /**
+     * Resolves the active topmost window/dialog DecorView using WindowManagerGlobal.
+     */
+    public static ViewGroup getTopmostDecorView(Activity activity) {
+        try {
+            Class<?> wmgClass = Class.forName("android.view.WindowManagerGlobal");
+            Method getInstance = wmgClass.getMethod("getInstance");
+            Object wmg = getInstance.invoke(null);
+            Field viewsField = wmgClass.getDeclaredField("mViews");
+            viewsField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            List<View> views = (List<View>) viewsField.get(wmg);
+            if (views != null && !views.isEmpty()) {
+                for (int i = views.size() - 1; i >= 0; i--) {
+                    View v = views.get(i);
+                    if (v instanceof ViewGroup && v.isShown() && v.getVisibility() == View.VISIBLE) {
+                        return (ViewGroup) v;
+                    }
+                }
+            }
+        } catch (Throwable ignored) {}
+
+        if (activity != null && activity.getWindow() != null) {
+            View decor = activity.getWindow().peekDecorView();
+            if (decor instanceof ViewGroup) return (ViewGroup) decor;
+        }
+        return null;
+    }
+
     private static View findTopViewUnder(View view, float x, float y) {
         if (view == null || view.getVisibility() != View.VISIBLE) return null;
         if (TAG_CURSOR_OVERLAY.equals(view.getTag())) return null;
@@ -168,7 +246,7 @@ public class TvDesktopCursorOverlay {
             if (TAG_CURSOR_OVERLAY.equals(curr.getTag())) {
                 return null;
             }
-            if (curr.isClickable() || curr.isLongClickable() || curr.isFocusable() ||
+            if (curr.isClickable() || curr.isLongClickable() ||
                 curr instanceof android.widget.Checkable ||
                 curr instanceof android.widget.Button ||
                 curr instanceof android.widget.ImageButton ||
@@ -181,7 +259,7 @@ public class TvDesktopCursorOverlay {
                 break;
             }
         }
-        return view;
+        return null;
     }
 
     private static void syncFocusUnderPointer(ViewGroup decorView, float x, float y) {
@@ -197,84 +275,6 @@ public class TvDesktopCursorOverlay {
         } catch (Throwable ignored) {}
     }
 
-    private static void performSmartClick(final Activity activity, final ViewGroup decorView, final CursorPointerView pointerView, final float x, final float y) {
-        if (activity == null || decorView == null) return;
-
-        if (pointerView != null) {
-            pointerView.triggerClickAnimation();
-        }
-
-        // 1. Find View under pointer
-        final View hitView = findTopViewUnder(decorView, x, y);
-        final View clickable = (hitView != null) ? findClickableTarget(hitView) : null;
-
-        // 2. Direct View Click execution if view found
-        if (clickable != null) {
-            try {
-                clickable.requestFocus();
-            } catch (Throwable ignored) {}
-
-            try {
-                clickable.performClick();
-                clickable.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED);
-            } catch (Throwable ignored) {}
-
-            // If EditText, pop up soft keyboard
-            if (clickable instanceof EditText) {
-                try {
-                    InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    if (imm != null) {
-                        imm.showSoftInput(clickable, InputMethodManager.SHOW_IMPLICIT);
-                    }
-                } catch (Throwable ignored) {}
-            }
-        }
-
-        // 3. Multi-Channel Pointer & Touch Event Dispatch (For Jetpack Compose, WebView & Custom Canvas)
-        final long downTime = SystemClock.uptimeMillis();
-        final long upTime = downTime + 50;
-
-        // Channel A: InputDevice.SOURCE_MOUSE (Standard Android TV pointer click)
-        try {
-            MotionEvent mousePress = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0);
-            mousePress.setSource(InputDevice.SOURCE_MOUSE);
-            decorView.dispatchTouchEvent(mousePress);
-
-            MotionEvent mouseRelease = MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, x, y, 0);
-            mouseRelease.setSource(InputDevice.SOURCE_MOUSE);
-            decorView.dispatchTouchEvent(mouseRelease);
-        } catch (Throwable ignored) {}
-
-        // Channel B: InputDevice.SOURCE_TOUCHSCREEN (Dispatched to decorView)
-        try {
-            MotionEvent touchDown = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, x, y, 0);
-            touchDown.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-            decorView.dispatchTouchEvent(touchDown);
-
-            MotionEvent touchUp = MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, x, y, 0);
-            touchUp.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-            decorView.dispatchTouchEvent(touchUp);
-        } catch (Throwable ignored) {}
-
-        // Channel C: Local coordinate SOURCE_TOUCHSCREEN directly to hitView (e.g. Compose AndroidComposeView)
-        if (hitView != null && hitView != decorView) {
-            try {
-                int[] loc = new int[2];
-                hitView.getLocationOnScreen(loc);
-                float localX = x - loc[0];
-                float localY = y - loc[1];
-
-                MotionEvent localDown = MotionEvent.obtain(downTime, downTime, MotionEvent.ACTION_DOWN, localX, localY, 0);
-                localDown.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                hitView.dispatchTouchEvent(localDown);
-
-                MotionEvent localUp = MotionEvent.obtain(downTime, upTime, MotionEvent.ACTION_UP, localX, localY, 0);
-                localUp.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                hitView.dispatchTouchEvent(localUp);
-            } catch (Throwable ignored) {}
-        }
-    }
-
     private static void attachCursorToActivity(final Activity activity) {
         if (activity == null || activity.isFinishing()) return;
         final Window window = activity.getWindow();
@@ -288,7 +288,6 @@ public class TvDesktopCursorOverlay {
         final float screenWidth = dm.widthPixels;
         final float screenHeight = dm.heightPixels;
 
-        // Check if overlay is already attached
         FrameLayout existing = (FrameLayout) decorView.findViewWithTag(TAG_CURSOR_OVERLAY);
         final FrameLayout overlayLayout;
         final CursorPointerView pointerView;
@@ -305,7 +304,6 @@ public class TvDesktopCursorOverlay {
             pointerView.setClickable(false);
             pointerView.setElevation(999999.0f);
 
-            // Overlay layout is completely transparent to touch
             overlayLayout = new FrameLayout(activity) {
                 @Override
                 public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -330,7 +328,6 @@ public class TvDesktopCursorOverlay {
             overlayLayout.setElevation(999999.0f);
             overlayLayout.addView(pointerView);
 
-            // Center cursor initially on screen
             coords = new float[]{
                 screenWidth > 0 ? screenWidth / 2.0f : 960.0f,
                 screenHeight > 0 ? screenHeight / 2.0f : 540.0f
@@ -351,7 +348,6 @@ public class TvDesktopCursorOverlay {
             } catch (Throwable ignored) {}
         }
 
-        // Install Self-Healing Window.Callback
         ensureCallbackAttached(activity, window, decorView, pointerView, overlayLayout, coords, screenWidth, screenHeight);
     }
 
@@ -367,7 +363,7 @@ public class TvDesktopCursorOverlay {
     ) {
         Window.Callback current = window.getCallback();
         if (current instanceof TvWindowCallbackWrapper) {
-            return; // Already wrapped
+            return;
         }
 
         TvWindowCallbackWrapper wrapper = new TvWindowCallbackWrapper(
@@ -375,7 +371,6 @@ public class TvDesktopCursorOverlay {
         );
         window.setCallback(wrapper);
 
-        // Schedule periodic self-healing watchdog check
         sMainHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -393,22 +388,23 @@ public class TvDesktopCursorOverlay {
     }
 
     private static void simulateSwipe(ViewGroup decorView, float startX, float startY, float endX, float endY) {
+        if (decorView == null) return;
         try {
             long now = SystemClock.uptimeMillis();
             MotionEvent down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, startX, startY, 0);
-            down.setSource(InputDevice.SOURCE_MOUSE);
+            down.setSource(InputDevice.SOURCE_TOUCHSCREEN);
             decorView.dispatchTouchEvent(down);
 
-            long moveTime = now + 100;
+            long moveTime = now + 120;
             float midX = (startX + endX) / 2.0f;
             float midY = (startY + endY) / 2.0f;
             MotionEvent move = MotionEvent.obtain(now, moveTime, MotionEvent.ACTION_MOVE, midX, midY, 0);
-            move.setSource(InputDevice.SOURCE_MOUSE);
+            move.setSource(InputDevice.SOURCE_TOUCHSCREEN);
             decorView.dispatchTouchEvent(move);
 
-            long upTime = now + 200;
+            long upTime = now + 240;
             MotionEvent up = MotionEvent.obtain(now, upTime, MotionEvent.ACTION_UP, endX, endY, 0);
-            up.setSource(InputDevice.SOURCE_MOUSE);
+            up.setSource(InputDevice.SOURCE_TOUCHSCREEN);
             decorView.dispatchTouchEvent(up);
         } catch (Throwable ignored) {}
     }
@@ -428,8 +424,11 @@ public class TvDesktopCursorOverlay {
         private final float mScreenHeight;
 
         private int mRepeatCount = 0;
+        private boolean mIsPointerDown = false;
         private long mDownTime = 0;
-        private boolean mIsDragging = false;
+        private float mDownX = 0;
+        private float mDownY = 0;
+        private boolean mHasDragged = false;
 
         public TvWindowCallbackWrapper(
                 Window.Callback original,
@@ -453,11 +452,17 @@ public class TvDesktopCursorOverlay {
             this.mScreenHeight = screenHeight;
         }
 
+        private ViewGroup getActiveDecor() {
+            Activity act = mActivityRef.get();
+            ViewGroup top = getTopmostDecorView(act);
+            return top != null ? top : mDecorView;
+        }
+
         @Override
         public boolean dispatchKeyEvent(KeyEvent event) {
             int code = event.getKeyCode();
             int action = event.getAction();
-            Activity activity = mActivityRef.get();
+            final Activity activity = mActivityRef.get();
 
             // 0. Toggle Mouse Mode / D-Pad Mode on Menu, Play/Pause, or Info key
             if (isToggleKey(code) && action == KeyEvent.ACTION_DOWN) {
@@ -470,8 +475,9 @@ public class TvDesktopCursorOverlay {
                 return mOriginal != null && mOriginal.dispatchKeyEvent(event);
             }
 
-            float curW = mDecorView.getWidth() > 0 ? (float) mDecorView.getWidth() : mScreenWidth;
-            float curH = mDecorView.getHeight() > 0 ? (float) mDecorView.getHeight() : mScreenHeight;
+            final ViewGroup activeDecor = getActiveDecor();
+            float curW = activeDecor.getWidth() > 0 ? (float) activeDecor.getWidth() : mScreenWidth;
+            float curH = activeDecor.getHeight() > 0 ? (float) activeDecor.getHeight() : mScreenHeight;
 
             // 1. D-Pad Navigation: Move Desktop Cursor Pointer
             if (isNavKey(code)) {
@@ -491,34 +497,83 @@ public class TvDesktopCursorOverlay {
                     mPointerView.setTranslationY(mCoords[1]);
                     mOverlayLayout.bringToFront();
 
-                    // Synchronize Android TV focus marker to view under cursor
-                    syncFocusUnderPointer(mDecorView, mCoords[0], mCoords[1]);
-
-                    // If user is holding OK while moving D-pad, dispatch drag/move!
-                    if (mIsDragging) {
+                    if (mIsPointerDown) {
+                        // User is holding OK while moving: dispatch true touch drag/move!
+                        mHasDragged = true;
                         long now = SystemClock.uptimeMillis();
-                        MotionEvent move = MotionEvent.obtain(mDownTime, now, MotionEvent.ACTION_MOVE, mCoords[0], mCoords[1], 0);
-                        move.setSource(InputDevice.SOURCE_MOUSE);
-                        mDecorView.dispatchTouchEvent(move);
+                        try {
+                            MotionEvent move = MotionEvent.obtain(mDownTime, now, MotionEvent.ACTION_MOVE, mCoords[0], mCoords[1], 0);
+                            move.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+                            activeDecor.dispatchTouchEvent(move);
+                        } catch (Throwable ignored) {}
+                    } else {
+                        // Synchronize Android TV focus marker to view under cursor
+                        syncFocusUnderPointer(activeDecor, mCoords[0], mCoords[1]);
                     }
                 } else if (action == KeyEvent.ACTION_UP) {
                     mRepeatCount = 0;
                 }
-                return true; // Consume navigation so cursor moves smoothly
+                return true;
             }
 
-            // 2. D-Pad Center / Enter / Button A: Dispatch Multi-Channel Smart Click
+            // 2. D-Pad Center / Enter / Button A: Clean Touch Down / Up Event Lifecycle
             if (isConfirmKey(code)) {
                 if (action == KeyEvent.ACTION_DOWN) {
-                    mIsDragging = true;
-                    // Only click on initial press (prevent cancelAndClearTouchTargets from key repeat)
-                    if (event.getRepeatCount() == 0) {
+                    if (event.getRepeatCount() == 0 && !mIsPointerDown) {
+                        mIsPointerDown = true;
                         mDownTime = SystemClock.uptimeMillis();
-                        performSmartClick(activity, mDecorView, mPointerView, mCoords[0], mCoords[1]);
+                        mDownX = mCoords[0];
+                        mDownY = mCoords[1];
+                        mHasDragged = false;
+
+                        if (mPointerView != null) {
+                            mPointerView.triggerClickAnimation();
+                        }
+
+                        try {
+                            MotionEvent down = MotionEvent.obtain(mDownTime, mDownTime, MotionEvent.ACTION_DOWN, mCoords[0], mCoords[1], 0);
+                            down.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+                            activeDecor.dispatchTouchEvent(down);
+                        } catch (Throwable ignored) {}
                     }
                 } else if (action == KeyEvent.ACTION_UP) {
-                    mIsDragging = false;
-                    mDownTime = 0;
+                    if (mIsPointerDown) {
+                        mIsPointerDown = false;
+                        long now = SystemClock.uptimeMillis();
+                        long upTime = Math.max(now, mDownTime + 65); // Real human press duration
+
+                        try {
+                            MotionEvent up = MotionEvent.obtain(mDownTime, upTime, MotionEvent.ACTION_UP, mCoords[0], mCoords[1], 0);
+                            up.setSource(InputDevice.SOURCE_TOUCHSCREEN);
+                            activeDecor.dispatchTouchEvent(up);
+                        } catch (Throwable ignored) {}
+
+                        // If user did not drag, verify hit target and execute reliable fallback
+                        if (!mHasDragged && activity != null) {
+                            final View hit = findTopViewUnder(activeDecor, mCoords[0], mCoords[1]);
+                            final View clickable = (hit != null) ? findClickableTarget(hit) : null;
+
+                            if (clickable instanceof EditText) {
+                                clickable.requestFocus();
+                                try {
+                                    InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+                                    if (imm != null) {
+                                        imm.showSoftInput(clickable, InputMethodManager.SHOW_IMPLICIT);
+                                    }
+                                } catch (Throwable ignored) {}
+                            } else if (clickable != null && clickable.isClickable()) {
+                                sMainHandler.postDelayed(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            clickable.performClick();
+                                            clickable.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED);
+                                        } catch (Throwable ignored) {}
+                                    }
+                                }, 75);
+                            }
+                        }
+                    }
                 }
                 return true;
             }
@@ -526,13 +581,13 @@ public class TvDesktopCursorOverlay {
             // 3. Fast Page / Channel Up & Down Scroll
             if (code == KeyEvent.KEYCODE_PAGE_DOWN || code == KeyEvent.KEYCODE_CHANNEL_DOWN) {
                 if (action == KeyEvent.ACTION_DOWN) {
-                    simulateSwipe(mDecorView, curW / 2.0f, curH * 0.75f, curW / 2.0f, curH * 0.25f);
+                    simulateSwipe(activeDecor, curW / 2.0f, curH * 0.75f, curW / 2.0f, curH * 0.25f);
                 }
                 return true;
             }
             if (code == KeyEvent.KEYCODE_PAGE_UP || code == KeyEvent.KEYCODE_CHANNEL_UP) {
                 if (action == KeyEvent.ACTION_DOWN) {
-                    simulateSwipe(mDecorView, curW / 2.0f, curH * 0.25f, curW / 2.0f, curH * 0.75f);
+                    simulateSwipe(activeDecor, curW / 2.0f, curH * 0.25f, curW / 2.0f, curH * 0.75f);
                 }
                 return true;
             }
