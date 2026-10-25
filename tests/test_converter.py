@@ -22,7 +22,9 @@ def test_toolchain_ready():
     assert status["all_ready"] is True
 
 def test_smartphone_to_tv_conversion(tmp_path):
-    sample_apk = Path("/home/alpesh/Web2APK_Output/API_Target_App-v1.0.0-smartphone.apk")
+    sample_apk = Path.home() / "Web2APK_Output/API_Target_App-v1.0.0-smartphone.apk"
+    if not sample_apk.is_file():
+        sample_apk = Path(__file__).resolve().parent.parent / "samples/sample-smartphone.apk"
     if not sample_apk.is_file():
         pytest.skip("Sample smartphone APK not found")
 
@@ -50,7 +52,9 @@ def test_smartphone_to_tv_conversion(tmp_path):
     assert "defaultFocusHighlightEnabled" in manifest_text
 
 def test_tv_to_smartphone_conversion(tmp_path):
-    sample_apk = Path("/home/alpesh/Web2APK_Output/Cyber_Arcade_Hardened-v1.0.0-android-tv.apk")
+    sample_apk = Path.home() / "Web2APK_Output/Cyber_Arcade_Hardened-v1.0.0-android-tv.apk"
+    if not sample_apk.is_file():
+        sample_apk = Path(__file__).resolve().parent.parent / "samples/sample-android-tv.apk"
     if not sample_apk.is_file():
         pytest.skip("Sample TV APK not found")
 
@@ -73,7 +77,9 @@ def test_tv_to_smartphone_conversion(tmp_path):
     assert "android.intent.category.LAUNCHER" in manifest_text
 
 def test_universal_conversion(tmp_path):
-    sample_apk = Path("/home/alpesh/Web2APK_Output/API_Target_App-v1.0.0-smartphone.apk")
+    sample_apk = Path.home() / "Web2APK_Output/API_Target_App-v1.0.0-smartphone.apk"
+    if not sample_apk.is_file():
+        sample_apk = Path(__file__).resolve().parent.parent / "samples/sample-smartphone.apk"
     if not sample_apk.is_file():
         pytest.skip("Sample APK not found")
 
@@ -285,8 +291,9 @@ def test_preview_asset_extraction():
 
     sample_apk = get_apk_path("Openworld4All-converted-tv.apk")
     if not sample_apk:
-        sample_apk = Path("/home/alpesh/APK_TV_Converter_Output/Openworld4All-converted-tv.apk")
+        sample_apk = Path.home() / "APK_TV_Converter_Output/Openworld4All-converted-tv.apk"
     if not sample_apk.is_file():
+        sample_apk = Path(__file__).resolve().parent.parent / "samples/sample-android-tv.apk"
         pytest.skip("Converted TV APK for preview test not found")
 
     # 1. Direct function extraction test
