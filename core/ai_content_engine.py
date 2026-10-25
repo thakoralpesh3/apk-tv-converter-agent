@@ -17,7 +17,7 @@ import socket
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
-CONFIG_FILE = Path("/home/alpesh/apk-tv-converter-agent/config.json")
+CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 GLOBAL_CONFIG = Path.home() / ".web2apk" / "config.json"
 MODELS_CACHE_FILE = Path.home() / ".apk_tv_converter" / "models_cache.json"
 

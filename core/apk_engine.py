@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Any, Callable, Optional
 
-DEFAULT_TOOLS_DIR = Path("/home/alpesh/.apk_tv_converter/tools")
+DEFAULT_TOOLS_DIR = Path(os.environ.get("APK_TOOLS_DIR", Path.home() / ".apk_tv_converter" / "tools"))
 LOCAL_TOOLS_DIR = Path(__file__).resolve().parent.parent / "tools"
 
 def _find_binary(preferred: Optional[Path], name: str, fallback_candidates: list[Path]) -> Path:

@@ -19,9 +19,9 @@ CORE_DIR = Path(__file__).resolve().parent
 CURSOR_SRC_DIR = CORE_DIR / "cursor_src"
 PRECOMPILED_DEX = CORE_DIR / "tv_cursor.dex"
 
-DEFAULT_TOOLS_DIR = Path("/home/alpesh/.apk_tv_converter/tools")
-WEB2APK_TOOLS_DIR = Path("/home/alpesh/.web2apk/tools")
-WEB2APK_JDK_DIR = Path("/home/alpesh/.web2apk/jdk/jdk-17.0.10+7/bin")
+DEFAULT_TOOLS_DIR = Path(os.environ.get("APK_TOOLS_DIR", Path.home() / ".apk_tv_converter" / "tools"))
+WEB2APK_TOOLS_DIR = Path(os.environ.get("WEB2APK_TOOLS_DIR", Path.home() / ".web2apk" / "tools"))
+WEB2APK_JDK_DIR = Path(os.environ.get("JAVA_HOME", Path.home() / ".web2apk" / "jdk" / "jdk-17.0.10+7" / "bin"))
 
 PROVIDER_CLASS = "com.tv.cursor.TvCursorInitProvider"
 
