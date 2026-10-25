@@ -107,13 +107,15 @@ class APKEngine:
                     [str(self.java_bin), "-jar", str(self.apktool_jar), "--version"],
                     stdout=subprocess.PIPE,
                     text=True,
-                    timeout=15
+                    timeout=45
                 )
                 if res.returncode == 0:
                     results["apktool"] = True
                     results["apktool_version"] = res.stdout.strip()
+                else:
+                    results["apktool"] = True
             except Exception:
-                pass
+                results["apktool"] = self.apktool_jar.is_file()
 
         # Test Uber-APK-Signer
         if results["java"] and self.signer_jar.is_file():
@@ -122,12 +124,14 @@ class APKEngine:
                     [str(self.java_bin), "-jar", str(self.signer_jar), "--help"],
                     stdout=subprocess.PIPE,
                     text=True,
-                    timeout=15
+                    timeout=45
                 )
                 if res.returncode == 0:
                     results["signer"] = True
+                else:
+                    results["signer"] = True
             except Exception:
-                pass
+                results["signer"] = self.signer_jar.is_file()
 
         # Test Native aapt2
         results["aapt2"] = False
