@@ -95,7 +95,7 @@ Recommended next step: Decompile with jadx -d out classes.dex
         self.assertEqual(strat_rn["code"], "STRATEGY_REACT_NATIVE")
 
     def test_fingerprint_jiotv_if_present(self):
-        jiotv_path = Path("/home/alpesh/Downloads/jiotv_7.0.9.apk")
+        jiotv_path = Path.home() / "Downloads" / "jiotv_7.0.9.apk"
         if not jiotv_path.is_file():
             self.skipTest("jiotv_7.0.9.apk not present in Downloads")
 

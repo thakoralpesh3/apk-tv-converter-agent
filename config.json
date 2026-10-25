@@ -1,12 +1,12 @@
 {
   "agent_name": "APK Cross-Converter AI Agent",
   "version": "1.0.0",
-  "output_dir": "/home/alpesh/APK_TV_Converter_Output",
-  "dropzone_dir": "/home/alpesh/APK_TV_Converter_Dropzone",
+  "output_dir": "~/APK_TV_Converter_Output",
+  "dropzone_dir": "~/APK_TV_Converter_Dropzone",
   "tools": {
-    "java": "/home/alpesh/.apk_tv_converter/tools/java",
-    "apktool": "/home/alpesh/.apk_tv_converter/tools/apktool.jar",
-    "signer": "/home/alpesh/.apk_tv_converter/tools/uber-apk-signer.jar"
+    "java": "~/.apk_tv_converter/tools/java",
+    "apktool": "~/.apk_tv_converter/tools/apktool.jar",
+    "signer": "~/.apk_tv_converter/tools/uber-apk-signer.jar"
   },
   "web": {
     "host": "0.0.0.0",
