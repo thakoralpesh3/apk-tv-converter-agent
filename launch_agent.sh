@@ -9,16 +9,16 @@ if [ -f "$SCRIPT_DIR/.venv/bin/python3" ]; then
     source "$SCRIPT_DIR/.venv/bin/activate"
 fi
 
-# Export JAVA_HOME and PATH if needed
-if [ -d "/home/alpesh/.web2apk/jdk/jdk-17.0.10+7" ]; then
-    export JAVA_HOME="/home/alpesh/.web2apk/jdk/jdk-17.0.10+7"
-    export PATH="/home/alpesh/.apk_tv_converter/tools:$JAVA_HOME/bin:$PATH"
+TOOLS_DIR="${APK_TOOLS_DIR:-$HOME/.apk_tv_converter/tools}"
+if [ -d "$HOME/.web2apk/jdk/jdk-17.0.10+7" ]; then
+    export JAVA_HOME="$HOME/.web2apk/jdk/jdk-17.0.10+7"
+    export PATH="$TOOLS_DIR:$JAVA_HOME/bin:$PATH"
 elif [ -z "$JAVA_HOME" ] && command -v java >/dev/null 2>&1; then
     JAVA_CMD=$(readlink -f "$(command -v java)")
     export JAVA_HOME="$(dirname "$(dirname "$JAVA_CMD")")"
-    export PATH="/home/alpesh/.apk_tv_converter/tools:$JAVA_HOME/bin:$PATH"
+    export PATH="$TOOLS_DIR:$JAVA_HOME/bin:$PATH"
 else
-    export PATH="/home/alpesh/.apk_tv_converter/tools:$PATH"
+    export PATH="$TOOLS_DIR:$PATH"
 fi
 
 EXIT_CODE=0

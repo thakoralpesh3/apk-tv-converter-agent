@@ -15,12 +15,13 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 def get_git_env() -> dict:
     env = os.environ.copy()
-    env["PATH"] = f"/home/alpesh/.local/bin:{env.get('PATH', '')}:/usr/local/bin:/usr/bin:/bin"
-    env["HOME"] = "/home/alpesh"
+    user_home = str(Path.home())
+    env["PATH"] = f"{user_home}/.local/bin:{env.get('PATH', '')}:/usr/local/bin:/usr/bin:/bin"
+    env["HOME"] = user_home
     return env
 
 def run_git(args: list[str]) -> tuple[int, str]:
-    git_bin = shutil.which("git") or "/home/alpesh/.local/bin/git"
+    git_bin = shutil.which("git") or str(Path.home() / ".local/bin/git")
     res = subprocess.run([git_bin] + args, cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=get_git_env())
     return res.returncode, (res.stdout + res.stderr).strip()
 
