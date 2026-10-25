@@ -210,7 +210,12 @@ def main():
         console.print("\n[bold]Recommendations:[/bold]")
         for r in audit.get("dpad_recommendations", []):
             console.print(f"  • {r}")
-        console.print(f"\n[dim]Engine: {audit.get('model')}[/dim]\n")
+        if args.output_dir:
+            out_p = Path(args.output_dir).resolve()
+            out_p.mkdir(parents=True, exist_ok=True)
+            audit_file = out_p / f"{Path(args.ai_audit).stem}-AI-TV-Audit.json"
+            audit_file.write_text(json.dumps(audit, indent=2), encoding="utf-8")
+            console.print(f"[dim]Audit saved to: {audit_file}[/dim]")
         return
 
     if args.ai_copy:
@@ -221,6 +226,12 @@ def main():
         console.print(f"[italic]{copy.get('short_description')}[/italic]\n")
         console.print(copy.get("full_description", ""))
         console.print(f"\n[dim]Engine: {copy.get('model')}[/dim]\n")
+        if args.output_dir:
+            out_p = Path(args.output_dir).resolve()
+            out_p.mkdir(parents=True, exist_ok=True)
+            copy_file = out_p / f"{Path(args.ai_copy).stem}-AI-Store-Listing.md"
+            copy_file.write_text(f"# {copy.get('title')}\n\n## Short Description\n{copy.get('short_description')}\n\n## Full Description\n{copy.get('full_description')}\n", encoding="utf-8")
+            console.print(f"[dim]Store listing saved to: {copy_file}[/dim]")
         return
 
     if args.preview:
