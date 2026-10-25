@@ -27,6 +27,9 @@ on:
         default: true
         type: boolean
 
+permissions:
+  contents: read
+
 jobs:
   convert:
     name: Convert APK (${{ github.event.inputs.target_mode }})

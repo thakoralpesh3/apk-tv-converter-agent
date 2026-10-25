@@ -36,3 +36,9 @@ decoded_check/
 .env
 .env.local
 local_settings.json
+
+# Cloudflare Security Auditor Hardening
+*.pyc
+*.key
+*.token
+*.pem
