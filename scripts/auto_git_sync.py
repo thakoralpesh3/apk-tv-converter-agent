@@ -7,13 +7,21 @@ import os
 import sys
 import time
 import subprocess
+import shutil
 import threading
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+def get_git_env() -> dict:
+    env = os.environ.copy()
+    env["PATH"] = f"/home/alpesh/.local/bin:{env.get('PATH', '')}:/usr/local/bin:/usr/bin:/bin"
+    env["HOME"] = "/home/alpesh"
+    return env
+
 def run_git(args: list[str]) -> tuple[int, str]:
-    res = subprocess.run(["git"] + args, cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    git_bin = shutil.which("git") or "/home/alpesh/.local/bin/git"
+    res = subprocess.run([git_bin] + args, cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=get_git_env())
     return res.returncode, (res.stdout + res.stderr).strip()
 
 def sync_now(custom_msg: str = None) -> bool:
