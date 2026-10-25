@@ -85,14 +85,14 @@ class APKDropHandler(FileSystemEventHandler):
         finally:
             self.processing.discard(apk_path)
 
-def start_dropzone_watcher(dropzone_dir: Path | str = "/home/alpesh/APK_TV_Converter_Dropzone"):
-    drop_path = Path(dropzone_dir)
+def start_dropzone_watcher(dropzone_dir: Optional[Path | str] = None, output_dir: Optional[Path | str] = None):
+    drop_path = Path(dropzone_dir) if dropzone_dir else Path(os.environ.get("APK_DROPZONE_DIR", Path.home() / "APK_TV_Converter_Dropzone"))
     drop_path.mkdir(parents=True, exist_ok=True)
     (drop_path / "to_tv").mkdir(exist_ok=True)
     (drop_path / "to_mobile").mkdir(exist_ok=True)
     (drop_path / "universal").mkdir(exist_ok=True)
 
-    out_path = Path("/home/alpesh/APK_TV_Converter_Output")
+    out_path = Path(output_dir) if output_dir else Path(os.environ.get("APK_OUTPUT_DIR", Path.home() / "APK_TV_Converter_Output"))
     out_path.mkdir(parents=True, exist_ok=True)
 
     console.print(f"[bold green]👁️ Dropzone Watcher Started[/bold green]")

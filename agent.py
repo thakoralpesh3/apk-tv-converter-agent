@@ -82,7 +82,7 @@ def check_environment():
     table.add_row("Output Directory", str(out_dir), out_status)
 
     # Dropzone Dir
-    drop_dir = Path("/home/alpesh/APK_TV_Converter_Dropzone")
+    drop_dir = Path(os.environ.get("APK_DROPZONE_DIR", Path.home() / "APK_TV_Converter_Dropzone"))
     drop_status = "[green]✓ Ready[/green]" if drop_dir.exists() else "[yellow]Created on demand[/yellow]"
     table.add_row("Dropzone Directory", str(drop_dir), drop_status)
 

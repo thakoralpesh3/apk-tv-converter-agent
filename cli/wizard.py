@@ -28,10 +28,12 @@ def run_wizard():
     console.print("\n[bold yellow]🎯 Step 1: Select Input APK[/bold yellow]")
     
     # Check common folders for APKs
-    recent_apks = glob.glob("/home/alpesh/Web2APK_Output/*.apk") + \
-                  glob.glob("/home/alpesh/APK_TV_Converter_Output/*.apk") + \
-                  glob.glob("/home/alpesh/Downloads/*.apk") + \
-                  glob.glob("/home/alpesh/Desktop/*.apk")
+    recent_apks = glob.glob(str(Path.home() / "Web2APK_Output/*.apk")) + \
+                  glob.glob(str(Path.home() / "APK_TV_Converter_Output/*.apk")) + \
+                  glob.glob(str(Path.home() / "Downloads/*.apk")) + \
+                  glob.glob(str(Path.home() / "Desktop/*.apk")) + \
+                  glob.glob(str(Path.cwd() / "*.apk")) + \
+                  glob.glob(str(Path(__file__).resolve().parent.parent / "samples/*.apk"))
     
     recent_apks = list(dict.fromkeys(recent_apks))[:6]
 
