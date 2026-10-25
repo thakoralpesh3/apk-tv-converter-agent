@@ -115,6 +115,7 @@ class ReverseEngineeringAnalyzer:
         script_output = None
         if self.script_path and self.script_path.is_file() and os.access(self.script_path, os.X_OK):
             try:
+                env = os.environ.copy()
                 tools_dir = Path.home() / ".apk_tv_converter/tools"
                 local_bin = Path.home() / ".local/bin"
                 env["PATH"] = f"{tools_dir}:{local_bin}:{env.get('PATH', '')}"
