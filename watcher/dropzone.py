@@ -6,6 +6,7 @@ Automatically processes APK files dropped into ~/APK_TV_Converter_Dropzone.
 import time
 import shutil
 from pathlib import Path
+from typing import Optional
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from rich.console import Console
