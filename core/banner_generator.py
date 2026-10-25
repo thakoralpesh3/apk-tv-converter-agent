@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-BUNDLED_FONT = Path("/home/alpesh/apk-tv-converter-agent/assets/fonts/AppFont-Bold.ttf")
+BUNDLED_FONT = Path(__file__).resolve().parent.parent / "assets" / "fonts" / "AppFont-Bold.ttf"
 
 COLOR_THEMES = {
     "cyan_indigo": {

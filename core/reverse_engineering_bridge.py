@@ -11,7 +11,7 @@ import subprocess
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Callable
 
-DEFAULT_SKILL_SCRIPT = Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin/skills/android-reverse-engineering/scripts/fingerprint.sh")
+DEFAULT_SKILL_SCRIPT = Path.home() / ".gemini/config/plugins/android-reverse-engineering-plugin/skills/android-reverse-engineering/scripts/fingerprint.sh"
 
 class ReverseEngineeringBridge:
     @classmethod
@@ -20,7 +20,7 @@ class ReverseEngineeringBridge:
         candidates = [
             Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh",
             DEFAULT_SKILL_SCRIPT,
-            Path("/home/alpesh/.apk_tv_converter/tools/fingerprint.sh")
+            Path.home() / ".apk_tv_converter/tools/fingerprint.sh"
         ]
         for candidate in candidates:
             if candidate.is_file() and os.access(candidate, os.X_OK):
@@ -34,8 +34,8 @@ class ReverseEngineeringBridge:
             shutil.which("jadx"),
             Path.home() / ".local/bin/jadx",
             Path.home() / ".local/share/jadx/bin/jadx",
-            Path("/home/alpesh/.apk_tv_converter/tools/jadx/bin/jadx"),
-            Path("/home/alpesh/.apk_tv_converter/tools/jadx")
+            Path.home() / ".apk_tv_converter/tools/jadx/bin/jadx",
+            Path.home() / ".apk_tv_converter/tools/jadx"
         ]
         for c in candidates:
             if c:
@@ -65,7 +65,7 @@ class ReverseEngineeringBridge:
             "jadx_ready": jadx_bin is not None,
             "jadx_path": str(jadx_bin) if jadx_bin else None,
             "jadx_version": jadx_version,
-            "skill_plugin_installed": Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin").is_dir() or (Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh").is_file()
+            "skill_plugin_installed": (Path.home() / ".gemini/config/plugins/android-reverse-engineering-plugin").is_dir() or (Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh").is_file()
         }
 
     @classmethod
