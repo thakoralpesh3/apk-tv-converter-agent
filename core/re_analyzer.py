@@ -17,9 +17,9 @@ from typing import Dict, Any, List, Optional, Callable
 
 DEFAULT_FINGERPRINT_CANDIDATES = [
     Path(__file__).resolve().parent.parent / "tools" / "fingerprint.sh",
-    Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin/skills/android-reverse-engineering/scripts/fingerprint.sh"),
-    Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin/plugins/android-reverse-engineering/skills/android-reverse-engineering/scripts/fingerprint.sh"),
-    Path("/home/alpesh/.apk_tv_converter/tools/fingerprint.sh"),
+    Path.home() / ".gemini/config/plugins/android-reverse-engineering-plugin/skills/android-reverse-engineering/scripts/fingerprint.sh",
+    Path.home() / ".gemini/config/plugins/android-reverse-engineering-plugin/plugins/android-reverse-engineering/skills/android-reverse-engineering/scripts/fingerprint.sh",
+    Path.home() / ".apk_tv_converter/tools/fingerprint.sh",
 ]
 
 class ReverseEngineeringAnalyzer:
@@ -45,8 +45,8 @@ class ReverseEngineeringAnalyzer:
             shutil.which("jadx"),
             Path.home() / ".local/bin/jadx",
             Path.home() / ".local/share/jadx/bin/jadx",
-            Path("/home/alpesh/.apk_tv_converter/tools/jadx/bin/jadx"),
-            Path("/home/alpesh/.apk_tv_converter/tools/jadx")
+            Path.home() / ".apk_tv_converter/tools/jadx/bin/jadx",
+            Path.home() / ".apk_tv_converter/tools/jadx"
         ]
         for c in candidates:
             if c:
@@ -73,7 +73,7 @@ class ReverseEngineeringAnalyzer:
             "jadx_ready": jadx_bin is not None,
             "jadx_path": str(jadx_bin) if jadx_bin else None,
             "jadx_version": jadx_version,
-            "plugin_installed": Path("/home/alpesh/.gemini/config/plugins/android-reverse-engineering-plugin").is_dir()
+            "plugin_installed": (Path.home() / ".gemini/config/plugins/android-reverse-engineering-plugin").is_dir()
         }
 
     def decompile(self, apk_path: Path | str, output_dir: Path | str, timeout: int = 180, log_callback: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
