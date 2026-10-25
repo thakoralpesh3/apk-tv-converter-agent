@@ -69,7 +69,13 @@ def get_apk_path(filename: str) -> Optional[Path]:
     p = converter.output_dir / filename
     if p.is_file():
         return p
-    for d in [BASE_DIR / "samples", Path("/home/alpesh/Downloads"), Path("/home/alpesh/APK_TV_Converter_Dropzone"), Path("/home/alpesh/Web2APK_Output")]:
+    search_dirs = [
+        BASE_DIR / "samples",
+        Path.home() / "Downloads",
+        Path(os.environ.get("APK_DROPZONE_DIR", Path.home() / "APK_TV_Converter_Dropzone")),
+        Path.home() / "Web2APK_Output"
+    ]
+    for d in search_dirs:
         alt = d / filename
         if alt.is_file():
             return alt
@@ -206,7 +212,7 @@ async def get_status():
         "lan_ip": get_lan_ip(),
         "output_count": len(list(converter.output_dir.glob("*.apk"))),
         "output_dir": str(converter.output_dir),
-        "dropzone_dir": "/home/alpesh/APK_TV_Converter_Dropzone",
+        "dropzone_dir": str(Path(os.environ.get("APK_DROPZONE_DIR", Path.home() / "APK_TV_Converter_Dropzone"))),
         "ai_model": GeminiAIContentEngine.get_preferred_model(),
         "ai_online": GeminiAIContentEngine.is_available()
     }
