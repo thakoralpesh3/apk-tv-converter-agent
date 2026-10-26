@@ -527,17 +527,23 @@ def open_browser_when_ready(url: str, check_port: int):
             pass
 
 def start_server(host: str = "0.0.0.0", port: int = 8877):
+    port = int(os.environ.get("PORT", port or 8877))
     # If server is already running, open in browser and exit cleanly
     if is_port_in_use(port):
         import webbrowser
         print(f"\n⚡ APK Cross-Converter Studio is already running on http://localhost:{port}!")
-        print("🌐 Opening Studio dashboard in your browser...\n")
-        webbrowser.open(f"http://localhost:{port}")
+        if not os.environ.get("PORT"):
+            print("🌐 Opening Studio dashboard in your browser...\n")
+            try:
+                webbrowser.open(f"http://localhost:{port}")
+            except Exception:
+                pass
         return
 
     import threading
-    t = threading.Thread(target=open_browser_when_ready, args=(f"http://localhost:{port}", port), daemon=True)
-    t.start()
+    if not os.environ.get("PORT"):
+        t = threading.Thread(target=open_browser_when_ready, args=(f"http://localhost:{port}", port), daemon=True)
+        t.start()
 
     print(f"\n🚀 Launching APK Cross-Converter Web Studio on http://{host}:{port}")
     lan_ip = get_lan_ip()
