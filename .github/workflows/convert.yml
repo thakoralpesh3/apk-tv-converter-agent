@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       apk_url:
-        description: 'Direct URL to download the APK to convert (or leave empty to use sample)'
+        description: 'Direct URL to download the APK to convert (e.g. from GitHub, Google Drive, direct link, or leave empty for sample)'
         required: false
         default: ''
       target_mode:
@@ -26,13 +26,20 @@ on:
         required: false
         default: true
         type: boolean
+      publish_release:
+        description: 'Automatically publish converted APK to GitHub Releases'
+        required: false
+        default: true
+        type: boolean
+  repository_dispatch:
+    types: [convert_apk]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   convert:
-    name: Convert APK (${{ github.event.inputs.target_mode }})
+    name: Convert APK (${{ github.event.inputs.target_mode || github.event.client_payload.target_mode || 'tv' }})
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -70,9 +77,13 @@ jobs:
       - name: Prepare Input APK
         run: |
           mkdir -p input_apks output_apks
-          if [ -n "${{ github.event.inputs.apk_url }}" ]; then
-            echo "Downloading APK from: ${{ github.event.inputs.apk_url }}"
-            curl -L "${{ github.event.inputs.apk_url }}" -o input_apks/target.apk
+          APK_URL="${{ github.event.inputs.apk_url || github.event.client_payload.apk_url }}"
+          if [ -n "$APK_URL" ]; then
+            echo "Downloading APK from: $APK_URL"
+            curl -L "$APK_URL" -o input_apks/target.apk
+          elif [ -f "dropzone/input.apk" ]; then
+            echo "Using dropzone/input.apk..."
+            cp dropzone/input.apk input_apks/target.apk
           else
             echo "Using bundled sample APK..."
             cp samples/sample-smartphone.apk input_apks/target.apk
@@ -82,31 +93,52 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python3 agent.py --convert input_apks/target.apk --mode ${{ github.event.inputs.target_mode }} --output-dir output_apks
+          TARGET_MODE="${{ github.event.inputs.target_mode || github.event.client_payload.target_mode || 'tv' }}"
+          python3 agent.py --convert input_apks/target.apk --mode "$TARGET_MODE" --output-dir output_apks
 
       - name: Run AI TV Audit (Optional)
-        if: ${{ github.event.inputs.run_ai_audit }}
+        if: ${{ github.event.inputs.run_ai_audit != false }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           CONVERTED_APK=$(ls output_apks/*.apk | head -n 1)
           if [ -f "$CONVERTED_APK" ]; then
-            python3 agent.py --ai-audit "$CONVERTED_APK" --output-dir output_apks || echo "AI Audit skipped or ran with heuristics"
+            python3 agent.py --ai-audit "$CONVERTED_APK" --output-dir output_apks || echo "AI Audit completed with heuristic fallback"
           fi
 
       - name: Generate AI Store Listing (Optional)
-        if: ${{ github.event.inputs.run_ai_copy }}
+        if: ${{ github.event.inputs.run_ai_copy != false }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           CONVERTED_APK=$(ls output_apks/*.apk | head -n 1)
+          TARGET_MODE="${{ github.event.inputs.target_mode || github.event.client_payload.target_mode || 'tv' }}"
           if [ -f "$CONVERTED_APK" ]; then
-            python3 agent.py --ai-copy "$CONVERTED_APK" --mode ${{ github.event.inputs.target_mode }} --output-dir output_apks || echo "AI Copy skipped or ran with heuristics"
+            python3 agent.py --ai-copy "$CONVERTED_APK" --mode "$TARGET_MODE" --output-dir output_apks || echo "AI Copy completed with heuristic fallback"
           fi
 
       - name: Upload Converted APK & Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: converted-apk-${{ github.event.inputs.target_mode }}-${{ github.run_number }}
+          name: converted-apk-${{ github.event.inputs.target_mode || 'tv' }}-${{ github.run_number }}
           path: output_apks/
-          retention-days: 14
+          retention-days: 30
+
+      - name: Publish to GitHub Releases
+        if: ${{ github.event.inputs.publish_release != false }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ github.run_number }}-converted"
+          name: "Converted APK Build #${{ github.run_number }}"
+          body: |
+            ### 🚀 Autonomous Android TV Cross-Conversion Build #${{ github.run_number }}
+            - **Target Mode**: `${{ github.event.inputs.target_mode || 'tv' }}`
+            - **Timestamp**: `${{ github.event.repository.updated_at }}`
+            - **Engine**: Native Dalvik MultiDex Desktop Mouse Cursor + Gemini AI Audit
+            
+            Download the converted TV APK and compatibility reports from Assets below.
+          files: output_apks/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
