@@ -1,0 +1,102 @@
+name: 24/7 Cloud Issue Conversion Bot
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  issue_convert:
+    name: Auto-Convert APK from Issue
+    if: contains(github.event.issue.title, '[Convert]') || contains(github.event.comment.body, '/convert') || contains(github.event.issue.body, '/convert')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Extract APK URL from Issue
+        id: extract
+        run: |
+          BODY="${{ github.event.comment.body || github.event.issue.body }}"
+          # Match URL ending in .apk or github release / upload attachment link
+          URL=$(echo "$BODY" | grep -o -E 'https?://[^ ]+\.apk' | head -n 1 || true)
+          if [ -z "$URL" ]; then
+            # Check for GitHub user-uploaded attachment
+            URL=$(echo "$BODY" | grep -o -E 'https?://github.com/[^ ]+/assets/[^ ]+' | head -n 1 || true)
+          fi
+          echo "found_url=$URL" >> $GITHUB_OUTPUT
+          if [ -z "$URL" ]; then
+            echo "No direct APK link found in text. Will use sample if requested."
+          else
+            echo "Target APK URL: $URL"
+          fi
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Java OpenJDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Conversion Tools
+        run: |
+          sudo apt-get update && sudo apt-get install -y aapt zipalign curl wget unzip
+          bash setup_tools.sh
+          pip install -r requirements.txt
+
+      - name: Download & Convert APK
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          mkdir -p input_apks output_apks
+          APK_URL="${{ steps.extract.outputs.found_url }}"
+          if [ -n "$APK_URL" ]; then
+            curl -L "$APK_URL" -o input_apks/target.apk
+          else
+            cp samples/sample-smartphone.apk input_apks/target.apk
+          fi
+
+          python3 agent.py --convert input_apks/target.apk --mode tv --output-dir output_apks
+
+      - name: Publish Converted APK to Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "issue-${{ github.event.issue.number }}-${{ github.run_number }}"
+          name: "TV Converted APK for Issue #${{ github.event.issue.number }}"
+          body: |
+            Automatically converted by APK TV Converter 24/7 Cloud Bot for Issue #${{ github.event.issue.number }}.
+          files: output_apks/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reply to Issue with Download Link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const releaseUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/releases/tag/issue-${context.issue.number}-${context.runNumber}`;
+            const message = `### 🎉 APK TV Conversion Completed Successfully!\n\n` +
+              `Your Android TV converted APK with **Native Desktop Mouse Cursor** and **16:9 Leanback support** has been generated and published.\n\n` +
+              `📦 **Download Converted APK & Reports:**\n` +
+              `➡️ [Download TV APK from Release](${releaseUrl})\n\n` +
+              `#### 🎮 Android TV Navigation Guide:\n` +
+              `- **D-Pad Arrows**: Move the virtual desktop cursor smoothly across the screen.\n` +
+              `- **D-Pad Center / OK**: Click any button, tab, or video player control.\n` +
+              `- **Menu / Play-Pause Key**: Toggle between Virtual Mouse Mode and TV Remote Focus Mode.\n` +
+              `- **Hold OK + D-Pad**: Scroll lists and seekbars.\n`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });

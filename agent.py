@@ -126,7 +126,7 @@ def main():
     parser.add_argument("--sync-github", nargs="?", const="", metavar="COMMIT_MSG", help="Commit and push all changes to GitHub origin main")
     parser.add_argument("--watch-sync", action="store_true", help="Start background automatic GitHub sync daemon")
     parser.add_argument("--output-dir", "-o", type=str, help="Custom output directory for converted APK")
-    parser.add_argument("--port", type=int, default=8877, help="Port for web dashboard")
+    parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8877)), help="Port for web dashboard")
 
     args = parser.parse_args()
 

@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: apk-tv-converter-studio
+    env: docker
+    plan: free
+    region: oregon
+    buildCommand: ""
+    startCommand: "python3 agent.py --gui --port $PORT"
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+    autoDeploy: true
