@@ -2,11 +2,18 @@
 
 [![24/7 TV Simulator](https://img.shields.io/badge/24%2F7%20Simulator-Live%20on%20GitHub-brightgreen?logo=googlechrome&logoColor=white)](https://thakoralpesh3.github.io/apk-tv-converter-agent/)
 [![CI Tests](https://github.com/thakoralpesh3/apk-tv-converter-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/thakoralpesh3/apk-tv-converter-agent/actions/workflows/ci.yml)
+[![Live 24/7 TV Simulator](https://img.shields.io/badge/Live_Simulator-24%2F7_Online-brightgreen.svg)](https://thakoralpesh3.github.io/apk-tv-converter-agent/)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/thakoralpesh3/apk-tv-converter-agent)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](Dockerfile)
 [![Gemini 4 Argon](https://img.shields.io/badge/Gemini_4-Argon_Tier--1-purple.svg)](core/ai_content_engine.py)
 
 An autonomous AI agent engineered for bi-directional conversion between Smartphone/Tablet APKs and Android TV / Google TV / Fire TV APKs, upgraded with the **Gemini 4 Argon AI Content Engine** and the **Android Reverse Engineering Triage Toolchain**.
+
+---
+
+## 📺 24/7 Live Android TV Simulator (Zero Local Install)
+Test web viewports, leanback navigation, and TV D-Pad remote controls 24/7 directly in your browser:
+👉 **[Launch 24/7 Android TV Simulator](https://thakoralpesh3.github.io/apk-tv-converter-agent/)**
 
 ---
 

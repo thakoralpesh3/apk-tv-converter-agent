@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Android TV Live Experience Simulator • 24/7 Cloud Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .tv-bezel {
+      box-shadow: 0 25px 60px -15px rgba(0,0,0,0.9), 0 0 0 10px #1e293b, 0 0 0 12px #475569;
+    }
+    .leanback-card {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .leanback-card:hover, .leanback-card.focused {
+      transform: scale(1.08);
+      box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5), 0 0 0 3px #8b5cf6;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-purple-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-4 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20 font-bold text-lg text-white">
+        📺
+      </div>
+      <div>
+        <h1 class="text-sm font-bold tracking-tight text-white flex items-center gap-2">
+          Android TV Simulator
+          <span class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 24/7 Cloud Live
+          </span>
+        </h1>
+        <p class="text-[11px] text-slate-400">16:9 Big-Screen Horizontal View • Desktop Mouse Cursor Overlay Engine</p>
+      </div>
+    </div>
+
+    <!-- URL Bar -->
+    <div class="flex-1 max-w-2xl flex items-center gap-2">
+      <div class="relative flex-1">
+        <span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500 text-xs">🌐</span>
+        <input type="url" id="appUrl" value="https://news.ycombinator.com" placeholder="Enter web URL or TV stream to test"
+               class="w-full bg-slate-950/80 border border-slate-700/80 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl pl-8 pr-24 py-2 text-xs text-white placeholder-slate-500 font-mono transition">
+        <button onclick="loadUrl()" class="absolute right-1 top-1 bottom-1 px-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold transition cursor-pointer">
+          Load
+        </button>
+      </div>
+      <button onclick="reloadFrame()" title="Reload Frame" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition cursor-pointer">
+        🔄
+      </button>
+    </div>
+
+    <!-- Right Actions -->
+    <div class="flex items-center gap-2">
+      <button onclick="openConvertModal()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-500/25 transition flex items-center gap-1.5 cursor-pointer">
+        <span>🚀</span> Convert Real APK
+      </button>
+      <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent" target="_blank" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
+        ⭐ GitHub
+      </a>
+    </div>
+  </header>
+
+  <!-- Simulator Main Stage -->
+  <main class="flex-1 p-4 lg:p-6 flex flex-col xl:flex-row gap-6 max-w-[1750px] w-full mx-auto items-start justify-center">
+
+    <!-- TV Display Center -->
+    <div class="flex-1 w-full flex flex-col items-center justify-center">
+
+      <!-- View Selector -->
+      <div class="mb-4 bg-slate-900/90 border border-slate-800 rounded-2xl p-1.5 flex items-center gap-1.5 shadow-xl">
+        <button id="btnViewWeb" onclick="setViewMode('web')" class="px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-purple-600 text-white shadow-md cursor-pointer">
+          🌐 Web / App Viewport
+        </button>
+        <button id="btnViewLeanback" onclick="setViewMode('leanback')" class="px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+          📺 Leanback TV Launcher
+        </button>
+      </div>
+
+      <!-- TV SCREEN (16:9 Cinema Aspect Ratio) -->
+      <div id="deviceTV" class="tv-bezel w-[960px] h-[540px] max-w-[95vw] rounded-2xl bg-slate-900 border border-slate-700/60 relative overflow-hidden flex flex-col select-none transition-all duration-300">
+        
+        <!-- TV Top Bar -->
+        <div class="h-7 bg-slate-950/90 border-b border-slate-800/80 px-4 flex items-center justify-between z-20 text-[11px] text-slate-400 font-mono">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span class="font-bold text-slate-200">Google TV / Android TV 14</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span id="tvClock">12:00 PM</span>
+            <span class="text-purple-400 font-bold">4K 60Hz</span>
+          </div>
+        </div>
+
+        <!-- TV Screen Area -->
+        <div id="tvScreenArea" class="flex-1 w-full relative bg-slate-950 overflow-hidden">
+          
+          <!-- Web Iframe View -->
+          <iframe id="tvIframe" src="https://news.ycombinator.com" class="w-full h-full border-0 bg-slate-950" allow="autoplay; camera; microphone; geolocation; accelerometer; gyroscope"></iframe>
+
+          <!-- Leanback Launcher View (Hidden by default) -->
+          <div id="leanbackView" class="w-full h-full p-8 hidden flex-col justify-between bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/40">
+            <div>
+              <h2 class="text-xl font-bold text-white tracking-tight mb-1">Android TV Leanback Home</h2>
+              <p class="text-xs text-slate-400">Select any converted app with your TV Remote D-Pad</p>
+            </div>
+
+            <!-- Horizontal App Rows -->
+            <div class="space-y-4 my-auto">
+              <div class="text-xs font-bold text-purple-400 uppercase tracking-wider">Converted TV Apps</div>
+              <div class="flex items-center gap-4 overflow-x-auto py-2">
+                <div class="leanback-card focused w-56 h-28 rounded-xl bg-slate-800/90 border border-purple-500/50 p-4 flex flex-col justify-between cursor-pointer">
+                  <div class="flex items-center justify-between">
+                    <span class="text-2xl">📺</span>
+                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">TV Banner</span>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white">JioTV for Android TV</div>
+                    <div class="text-[10px] text-slate-400">Live TV & Entertainment</div>
+                  </div>
+                </div>
+
+                <div class="leanback-card w-56 h-28 rounded-xl bg-slate-800/60 border border-slate-700/60 p-4 flex flex-col justify-between cursor-pointer">
+                  <div class="flex items-center justify-between">
+                    <span class="text-2xl">📰</span>
+                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-700 text-slate-300">Web App</span>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white">Hacker News TV</div>
+                    <div class="text-[10px] text-slate-400">Tech & News Feed</div>
+                  </div>
+                </div>
+
+                <div class="leanback-card w-56 h-28 rounded-xl bg-slate-800/60 border border-slate-700/60 p-4 flex flex-col justify-between cursor-pointer">
+                  <div class="flex items-center justify-between">
+                    <span class="text-2xl">🎮</span>
+                    <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-700 text-slate-300">Game</span>
+                  </div>
+                  <div>
+                    <div class="text-xs font-bold text-white">2048 TV Edition</div>
+                    <div class="text-[10px] text-slate-400">D-Pad Puzzle Game</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-[11px] text-slate-500 flex items-center justify-between">
+              <span>Press D-Pad arrows to navigate • OK to launch</span>
+              <span>Hardware Acceleration: Active</span>
+            </div>
+          </div>
+
+          <!-- Virtual Desktop Mouse Cursor Overlay -->
+          <div id="tvCursor" class="absolute pointer-events-none transition-transform duration-75 z-30" style="left: 480px; top: 270px;">
+            <svg class="w-7 h-7 filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]" viewBox="0 0 24 24" fill="none">
+              <path d="M4 3L11 21L14.5 13.5L22 10.5L4 3Z" fill="#8b5cf6" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- TV Bottom Bezel -->
+        <div class="h-4 bg-slate-950 flex items-center justify-center border-t border-slate-800/80">
+          <span class="text-[9px] uppercase tracking-widest text-slate-600 font-bold">SONY BRAVIA OLED 4K</span>
+        </div>
+      </div>
+
+      <!-- TV Stand -->
+      <div class="flex flex-col items-center">
+        <div class="w-28 h-5 bg-slate-800 border-x border-slate-700"></div>
+        <div class="w-56 h-2 rounded-full bg-slate-700 shadow-xl"></div>
+      </div>
+    </div>
+
+    <!-- Right Controls: Virtual Remote Controller & Cloud Features -->
+    <div class="w-full xl:w-96 space-y-4">
+
+      <!-- Virtual TV Remote -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-2xl backdrop-blur-md">
+        <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🎮</span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Android TV Remote</h3>
+          </div>
+          <span class="text-[10px] text-purple-400 font-mono bg-purple-950/60 px-2 py-0.5 rounded-full border border-purple-800/60">MultiDex Cursor</span>
+        </div>
+
+        <!-- D-Pad Directional Controller -->
+        <div class="flex justify-center my-3">
+          <div class="w-44 h-44 rounded-full bg-slate-950 border-4 border-slate-800 relative shadow-inner p-1 flex items-center justify-center">
+            <!-- Up -->
+            <button onclick="sendKey('ArrowUp')" class="absolute top-2 w-12 h-10 rounded-t-xl bg-slate-800 hover:bg-slate-700 active:bg-purple-600 text-slate-200 text-xs font-bold flex items-center justify-center transition cursor-pointer">
+              ▲
+            </button>
+            <!-- Left -->
+            <button onclick="sendKey('ArrowLeft')" class="absolute left-2 w-10 h-12 rounded-l-xl bg-slate-800 hover:bg-slate-700 active:bg-purple-600 text-slate-200 text-xs font-bold flex items-center justify-center transition cursor-pointer">
+              ◀
+            </button>
+            <!-- Center OK -->
+            <button onclick="sendKey('Enter')" class="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-95 text-white text-xs font-bold shadow-lg shadow-purple-500/25 flex items-center justify-center transition cursor-pointer z-10">
+              OK
+            </button>
+            <!-- Right -->
+            <button onclick="sendKey('ArrowRight')" class="absolute right-2 w-10 h-12 rounded-r-xl bg-slate-800 hover:bg-slate-700 active:bg-purple-600 text-slate-200 text-xs font-bold flex items-center justify-center transition cursor-pointer">
+              ▶
+            </button>
+            <!-- Down -->
+            <button onclick="sendKey('ArrowDown')" class="absolute bottom-2 w-12 h-10 rounded-b-xl bg-slate-800 hover:bg-slate-700 active:bg-purple-600 text-slate-200 text-xs font-bold flex items-center justify-center transition cursor-pointer">
+              ▼
+            </button>
+          </div>
+        </div>
+
+        <!-- Auxiliary Keys -->
+        <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-800/80">
+          <button onclick="sendKey('Escape')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex flex-col items-center gap-1 transition cursor-pointer">
+            <span>↩️</span>
+            <span class="text-[10px]">Back</span>
+          </button>
+          <button onclick="sendKey('Home')" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex flex-col items-center gap-1 transition cursor-pointer">
+            <span>🏠</span>
+            <span class="text-[10px]">Home</span>
+          </button>
+          <button onclick="toggleMouseMode()" id="btnMouseMode" class="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/80 hover:bg-purple-900 text-purple-200 text-xs font-semibold flex flex-col items-center gap-1 transition cursor-pointer">
+            <span>🖱️</span>
+            <span class="text-[10px]" id="lblMouseMode">Mouse: ON</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Presets -->
+      <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-5 shadow-xl backdrop-blur-md">
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+          <span>⚡</span> Quick TV Showcase
+        </h3>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button onclick="setSample('https://news.ycombinator.com')" class="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-slate-300 font-medium transition cursor-pointer">
+            📰 Hacker News
+          </button>
+          <button onclick="setSample('https://2048game.com')" class="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-slate-300 font-medium transition cursor-pointer">
+            🎮 2048 Game
+          </button>
+          <button onclick="setSample('https://en.m.wikipedia.org')" class="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-slate-300 font-medium transition cursor-pointer">
+            📚 Wikipedia TV
+          </button>
+          <button onclick="setSample('https://excalidraw.com')" class="p-2.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-left text-slate-300 font-medium transition cursor-pointer">
+            🎨 Whiteboard TV
+          </button>
+        </div>
+      </div>
+
+      <!-- Cloud Status -->
+      <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/40 border border-purple-900/30 rounded-3xl p-5 shadow-xl">
+        <div class="flex items-center gap-2 mb-2 text-purple-400 text-xs font-bold uppercase tracking-wider">
+          <span>☁️</span> 24/7 Cloud Operations
+        </div>
+        <p class="text-[11px] text-slate-400 leading-relaxed mb-3">
+          This TV simulator runs 24/7 natively on GitHub Pages with zero server downtime. Convert any APK to 16:9 Android TV directly from GitHub Actions.
+        </p>
+        <div class="text-[11px] font-mono text-slate-500 space-y-1">
+          <div>• Host: GitHub Pages (Global CDN)</div>
+          <div>• Status: Active 24/7</div>
+          <div>• Engine: Native TV Remote Interceptor</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Convert Modal -->
+  <div id="convertModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <span>📺</span> Convert APK to Android TV via GitHub Cloud
+        </h3>
+        <button onclick="closeConvertModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Convert any smartphone APK into an Android TV app with Native Desktop Mouse Cursor directly inside GitHub Actions:
+      </p>
+
+      <div class="space-y-3 pt-2">
+        <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent/actions/workflows/convert.yml" target="_blank"
+           class="w-full p-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center justify-between transition shadow-lg shadow-purple-500/20">
+          <span>🚀 Convert in GitHub Actions (Run Workflow)</span>
+          <span>➔</span>
+        </a>
+
+        <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent/issues/new?title=%5BConvert%5D+App&body=apk_url:+https://example.com/app.apk" target="_blank"
+           class="w-full p-3.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center justify-between border border-slate-700 transition">
+          <span>🤖 Convert via 24/7 Issue Bot</span>
+          <span>➔</span>
+        </a>
+      </div>
+
+      <div class="text-[11px] text-slate-500 text-center pt-2">
+        Injects Leanback launcher, relaxes hardware locks, and embeds D-Pad mouse cursor.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let mouseMode = true;
+    let cursorX = 480;
+    let cursorY = 270;
+
+    function updateClocks() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('tvClock').textContent = timeStr;
+    }
+    setInterval(updateClocks, 1000);
+    updateClocks();
+
+    function loadUrl() {
+      let u = document.getElementById('appUrl').value.trim();
+      if (!u.startsWith('http://') && !u.startsWith('https://')) {
+        u = 'https://' + u;
+        document.getElementById('appUrl').value = u;
+      }
+      document.getElementById('tvIframe').src = u;
+    }
+
+    function reloadFrame() {
+      loadUrl();
+    }
+
+    function setSample(url) {
+      document.getElementById('appUrl').value = url;
+      loadUrl();
+      setViewMode('web');
+    }
+
+    function setViewMode(mode) {
+      const iframe = document.getElementById('tvIframe');
+      const leanback = document.getElementById('leanbackView');
+      const btnWeb = document.getElementById('btnViewWeb');
+      const btnLeanback = document.getElementById('btnViewLeanback');
+
+      if (mode === 'web') {
+        iframe.classList.remove('hidden');
+        leanback.classList.add('hidden');
+        btnWeb.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-purple-600 text-white shadow-md cursor-pointer';
+        btnLeanback.className = 'px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer';
+      } else {
+        iframe.classList.add('hidden');
+        leanback.classList.remove('hidden');
+        leanback.classList.add('flex');
+        btnLeanback.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-purple-600 text-white shadow-md cursor-pointer';
+        btnWeb.className = 'px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer';
+      }
+    }
+
+    function sendKey(keyName) {
+      const iframe = document.getElementById('tvIframe');
+      
+      if (mouseMode) {
+        const step = 45;
+        if (keyName === 'ArrowUp') cursorY = Math.max(20, cursorY - step);
+        if (keyName === 'ArrowDown') cursorY = Math.min(500, cursorY + step);
+        if (keyName === 'ArrowLeft') cursorX = Math.max(20, cursorX - step);
+        if (keyName === 'ArrowRight') cursorX = Math.min(920, cursorX + step);
+        
+        const cursor = document.getElementById('tvCursor');
+        cursor.style.left = cursorX + 'px';
+        cursor.style.top = cursorY + 'px';
+      }
+
+      try {
+        iframe.contentWindow.postMessage({ type: 'keydown', key: keyName }, '*');
+      } catch (e) {}
+    }
+
+    function toggleMouseMode() {
+      mouseMode = !mouseMode;
+      const cursor = document.getElementById('tvCursor');
+      const lbl = document.getElementById('lblMouseMode');
+      const btn = document.getElementById('btnMouseMode');
+
+      if (mouseMode) {
+        cursor.classList.remove('hidden');
+        lbl.textContent = 'Mouse: ON';
+        btn.classList.add('bg-purple-950/80', 'border-purple-800/80', 'text-purple-200');
+        btn.classList.remove('bg-slate-800', 'text-slate-300');
+      } else {
+        cursor.classList.add('hidden');
+        lbl.textContent = 'Mouse: OFF';
+        btn.classList.remove('bg-purple-950/80', 'border-purple-800/80', 'text-purple-200');
+        btn.classList.add('bg-slate-800', 'text-slate-300');
+      }
+    }
+
+    function openConvertModal() {
+      document.getElementById('convertModal').classList.remove('hidden');
+    }
+
+    function closeConvertModal() {
+      document.getElementById('convertModal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
