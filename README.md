@@ -1,5 +1,6 @@
 # APK Cross-Converter AI Agent (Smartphone ⇋ Android TV)
 
+[![24/7 TV Simulator](https://img.shields.io/badge/24%2F7%20Simulator-Live%20on%20GitHub-brightgreen?logo=googlechrome&logoColor=white)](https://thakoralpesh3.github.io/apk-tv-converter-agent/)
 [![CI Tests](https://github.com/thakoralpesh3/apk-tv-converter-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/thakoralpesh3/apk-tv-converter-agent/actions/workflows/ci.yml)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/thakoralpesh3/apk-tv-converter-agent)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](Dockerfile)
@@ -12,6 +13,15 @@ An autonomous AI agent engineered for bi-directional conversion between Smartpho
 ## 🌐 Run Directly from GitHub
 
 You can run this agent in multiple ways without manual configuration:
+
+### 0. 📺 24/7 Android TV Live Simulator (Instant in Your Browser)
+Run, test, and interact with Android TV apps, the virtual desktop mouse cursor, and the interactive TV remote control 24/7 without installing anything:
+➡️ **[Launch 24/7 Android TV Simulator](https://thakoralpesh3.github.io/apk-tv-converter-agent/)**
+
+- **Live 16:9 Cinema TV Screen**: Experience Leanback Launcher and In-App TV playback.
+- **Virtual Desktop Mouse Pointer**: Test D-Pad cursor movement and synthetic touch clicks.
+- **Interactive D-Pad Remote**: Full direction pad, OK click, volume control, and sound synthesis.
+- **Client-Side APK Testing**: Drag & drop any converted APK to test directly in your browser.
 
 ### 1. ⚡ Convert via GitHub Actions (Zero Local Setup)
 1. Go to the **[Actions Tab](https://github.com/thakoralpesh3/apk-tv-converter-agent/actions/workflows/convert.yml)**.

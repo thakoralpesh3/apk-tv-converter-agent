@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Android TV Live Simulator & Web Studio • 24/7 GitHub Cloud</title>
+  <link rel="icon" type="image/png" href="assets/app-icon.png">
+  <script src="tailwind.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.4)); }
+      50% { opacity: 1; filter: drop-shadow(0 0 25px rgba(0, 229, 255, 0.8)); }
+    }
+    .active-focus-marker {
+      outline: 3px solid #00E5FF !important;
+      outline-offset: 3px !important;
+      box-shadow: 0 0 20px rgba(0, 229, 255, 0.6) !important;
+      transform: scale(1.04) !important;
+      transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+    }
+    .tv-glass {
+      background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.05) 0%, rgba(0, 0, 0, 0.4) 100%);
+    }
+    .remote-btn:active {
+      transform: scale(0.92);
+    }
+    /* Hide scrollbars for TV carousels */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
+
+  <!-- Global Header -->
+  <header class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <img src="assets/app-icon.png" alt="Icon" class="w-7 h-7 object-contain rounded-lg">
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-cyan-400 bg-clip-text text-transparent">
+              Android TV Live Simulator
+            </h1>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800">
+              ● 24/7 GITHUB CLOUD
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">
+            16:9 Leanback Experience • Virtual Desktop Mouse Pointer • Interactive D-Pad Controller
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Links -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="#simulator" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 border border-slate-800 transition text-slate-300 hover:text-white flex items-center gap-1.5">
+          <span>📺</span> <span class="hidden sm:inline">TV Simulator</span>
+        </a>
+        <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent/issues/new?title=%5BConvert%5D+Convert+My+APK+to+Android+TV&body=%2Fconvert%20YOUR_APK_URL_HERE" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white shadow-md shadow-cyan-500/20 transition flex items-center gap-1.5">
+          <span>⚡</span> <span>Convert APK 24/7</span>
+        </a>
+        <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent" target="_blank" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 border border-slate-800 transition" title="GitHub Repository">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="space-y-3 max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/80 text-cyan-300 border border-cyan-800/80">
+          <span>🎮</span> Autonomous TV Mouse Overlay & Leanback Engine
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+          Simulate Android TV Apps in Real-Time <br class="hidden sm:inline">
+          <span class="bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400 bg-clip-text text-transparent">Directly in Your Browser 24/7</span>
+        </h2>
+        <p class="text-sm text-slate-300 leading-relaxed">
+          Test converted smartphone apps on a simulated 16:9 Android TV screen with our native <strong>Virtual Desktop Mouse Cursor</strong>, <strong>Neon Cyan Remote Focus Marker</strong>, and full D-Pad remote control. Zero installation required.
+        </p>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <p class="text-[10px] font-mono text-slate-400">STATUS</p>
+          <p class="text-xs font-bold text-emerald-400 mt-0.5">● 24/7 Online</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center">
+          <p class="text-[10px] font-mono text-slate-400">RESOLUTION</p>
+          <p class="text-xs font-bold text-cyan-400 mt-0.5">16:9 (1080p / 4K)</p>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
+          <p class="text-[10px] font-mono text-slate-400">REMOTE MODE</p>
+          <p id="heroRemoteMode" class="text-xs font-bold text-cyan-300 mt-0.5">🖱️ Mouse Active</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Simulator Main Stage -->
+  <main id="simulator" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex-1">
+    
+    <!-- Controls Bar above TV -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 bg-slate-900/70 border border-slate-800/80 rounded-xl px-4 py-2.5">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-mono text-slate-400">ACTIVE PRESET:</span>
+        <select id="presetSelect" onchange="changeAppPreset(this.value)" class="bg-slate-950 border border-slate-700 text-xs font-semibold text-cyan-300 rounded-lg px-2.5 py-1.5 outline-none focus:border-cyan-500">
+          <option value="jiotv" selected>JioTV 7.0.9 (Android TV Edition)</option>
+          <option value="cinema">Cinema MovieBox (16:9 TV Edition)</option>
+          <option value="arcade">Cyber Arcade Hardened (TV Edition)</option>
+          <option value="sample">Sample Universal TV App</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btnViewLauncher" onclick="switchTvView('launcher')" class="px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition">
+          🏠 Leanback Launcher
+        </button>
+        <button id="btnViewApp" onclick="switchTvView('app')" class="px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-600 text-white shadow-sm transition">
+          📺 In-App Experience
+        </button>
+        <div class="h-4 w-[1px] bg-slate-800 mx-1 hidden sm:block"></div>
+        <button onclick="toggleAudio()" id="btnAudioToggle" class="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition" title="Toggle Remote Sound Effects">
+          🔊 Sound: ON
+        </button>
+      </div>
+    </div>
+
+    <!-- Simulator Body: TV Frame + Remote Control -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- Left: 16:9 Cinema Television Frame (cols 1-8 / 9) -->
+      <div class="lg:col-span-8 xl:col-span-9 flex flex-col items-center">
+        
+        <!-- TV Bezel -->
+        <div class="w-full bg-gradient-to-b from-slate-900 via-slate-950 to-black p-3 sm:p-5 rounded-3xl border-4 border-slate-800 shadow-2xl relative">
+          
+          <!-- Ambient Backlight Glow -->
+          <div id="tvAmbientGlow" class="absolute -inset-4 bg-cyan-500/15 rounded-3xl blur-2xl pointer-events-none transition-all duration-500"></div>
+
+          <!-- Top TV Brand & Status LED -->
+          <div class="flex items-center justify-between pb-2 px-2 text-[10px] font-mono text-slate-500">
+            <span class="flex items-center gap-1.5">
+              <span id="tvPowerLed" class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+              <span>ANDROID TV 4K ULTRA HD</span>
+            </span>
+            <span id="tvResolutionBadge" class="tracking-widest">3840 x 2160 • 60 FPS</span>
+          </div>
+
+          <!-- Actual 16:9 Screen Display -->
+          <div id="tvScreen" class="w-full aspect-video bg-gradient-to-br from-slate-950 via-slate-900 to-black rounded-2xl overflow-hidden relative border border-slate-800/80 select-none shadow-inner flex flex-col justify-between tv-glass">
+            
+            <!-- TV Top Status Bar -->
+            <div class="h-8 px-4 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent text-[11px] font-mono text-slate-300 z-20">
+              <div class="flex items-center gap-3">
+                <span id="tvClock">12:00 PM</span>
+                <span class="text-slate-500">•</span>
+                <span class="flex items-center gap-1 text-cyan-400 font-bold">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/></svg>
+                  <span>Wi-Fi 6 Connected</span>
+                </span>
+              </div>
+              <div class="flex items-center gap-3 text-slate-400">
+                <span id="tvActiveModeIndicator" class="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 text-[10px] border border-cyan-800">
+                  MOUSE MODE
+                </span>
+                <span>⚙️</span>
+                <span>👤</span>
+              </div>
+            </div>
+
+            <!-- VIEW 1: Android TV Leanback Launcher -->
+            <div id="tvViewLauncher" class="flex-1 p-4 sm:p-6 overflow-y-auto no-scrollbar space-y-5 z-10 hidden">
+              
+              <!-- Featured Hero Carousel -->
+              <div class="relative w-full h-36 sm:h-44 rounded-2xl overflow-hidden border border-slate-700/60 shadow-xl group">
+                <img id="tvHeroBanner" src="assets/default_banner.png" alt="Banner" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent flex flex-col justify-end p-4">
+                  <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500 text-black w-fit mb-1">
+                    FEATURED ANDROID TV EDITION
+                  </div>
+                  <h3 id="tvHeroTitle" class="text-lg sm:text-xl font-bold text-white tracking-wide">JioTV 7.0.9 (Android TV Edition)</h3>
+                  <p id="tvHeroTagline" class="text-xs text-slate-300">Live TV Channels, Full EPG Guide & Native Desktop Mouse Cursor Navigation</p>
+                </div>
+              </div>
+
+              <!-- Apps & Games Channel Row -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">Apps & Games</h4>
+                  <span class="text-[10px] text-slate-500">D-Pad / Mouse Selectable</span>
+                </div>
+                <div class="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
+                  
+                  <!-- App 1: JioTV (Target App) -->
+                  <div tabindex="0" onclick="launchApp('jiotv')" class="tv-focusable active-focus-marker relative w-44 sm:w-52 aspect-[16/9] rounded-xl overflow-hidden bg-slate-900 border border-slate-700 flex-shrink-0 cursor-pointer shadow-lg transition">
+                    <img id="tileJioBanner" src="assets/default_banner.png" class="w-full h-full object-cover" alt="JioTV">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent flex items-end p-2.5">
+                      <span class="text-xs font-bold text-white drop-shadow">JioTV TV</span>
+                    </div>
+                  </div>
+
+                  <!-- App 2: Cinema MovieBox -->
+                  <div tabindex="0" onclick="launchApp('cinema')" class="tv-focusable relative w-44 sm:w-52 aspect-[16/9] rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex-shrink-0 cursor-pointer shadow-lg transition">
+                    <div class="w-full h-full bg-gradient-to-tr from-purple-900 via-indigo-950 to-slate-900 flex flex-col items-center justify-center p-3 text-center">
+                      <span class="text-2xl">🎬</span>
+                      <span class="text-xs font-bold text-purple-200 mt-1">Cinema MovieBox</span>
+                      <span class="text-[9px] text-purple-400">4K Movies & Shows</span>
+                    </div>
+                  </div>
+
+                  <!-- App 3: Cyber Arcade -->
+                  <div tabindex="0" onclick="launchApp('arcade')" class="tv-focusable relative w-44 sm:w-52 aspect-[16/9] rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex-shrink-0 cursor-pointer shadow-lg transition">
+                    <div class="w-full h-full bg-gradient-to-tr from-emerald-950 via-teal-900 to-slate-900 flex flex-col items-center justify-center p-3 text-center">
+                      <span class="text-2xl">🕹️</span>
+                      <span class="text-xs font-bold text-teal-200 mt-1">Cyber Arcade</span>
+                      <span class="text-[9px] text-teal-400">TV Gamepad Ready</span>
+                    </div>
+                  </div>
+
+                  <!-- App 4: Sample App -->
+                  <div tabindex="0" onclick="launchApp('sample')" class="tv-focusable relative w-44 sm:w-52 aspect-[16/9] rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex-shrink-0 cursor-pointer shadow-lg transition">
+                    <div class="w-full h-full bg-gradient-to-tr from-blue-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center p-3 text-center">
+                      <span class="text-2xl">📱</span>
+                      <span class="text-xs font-bold text-blue-200 mt-1">Universal TV App</span>
+                      <span class="text-[9px] text-blue-400">Sample Converted APK</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- Live TV Channels Row -->
+              <div>
+                <h4 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2">Live TV Now Playing</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div tabindex="0" onclick="playLiveChannel('Sports HD')" class="tv-focusable p-3 rounded-xl bg-slate-900/90 border border-slate-800 cursor-pointer hover:border-cyan-500/50 transition">
+                    <span class="text-[10px] font-bold text-cyan-400">● LIVE</span>
+                    <p class="text-xs font-bold text-white mt-1">Sports HD 1</p>
+                    <p class="text-[10px] text-slate-400">Live Cricket & Football</p>
+                  </div>
+                  <div tabindex="0" onclick="playLiveChannel('News 24/7')" class="tv-focusable p-3 rounded-xl bg-slate-900/90 border border-slate-800 cursor-pointer hover:border-cyan-500/50 transition">
+                    <span class="text-[10px] font-bold text-red-400">● LIVE</span>
+                    <p class="text-xs font-bold text-white mt-1">Global News 24/7</p>
+                    <p class="text-[10px] text-slate-400">World Headlines</p>
+                  </div>
+                  <div tabindex="0" onclick="playLiveChannel('Cinema Classic')" class="tv-focusable p-3 rounded-xl bg-slate-900/90 border border-slate-800 cursor-pointer hover:border-cyan-500/50 transition">
+                    <span class="text-[10px] font-bold text-amber-400">● ON AIR</span>
+                    <p class="text-xs font-bold text-white mt-1">Cinema Classics</p>
+                    <p class="text-[10px] text-slate-400">Blockbuster Showcase</p>
+                  </div>
+                  <div tabindex="0" onclick="playLiveChannel('Music Mix')" class="tv-focusable p-3 rounded-xl bg-slate-900/90 border border-slate-800 cursor-pointer hover:border-cyan-500/50 transition">
+                    <span class="text-[10px] font-bold text-purple-400">● ON AIR</span>
+                    <p class="text-xs font-bold text-white mt-1">Music MTV Hits</p>
+                    <p class="text-[10px] text-slate-400">Top 50 Countdown</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- VIEW 2: In-App TV Experience Stage (JioTV / Converted Screen) -->
+            <div id="tvViewApp" class="flex-1 p-4 sm:p-6 flex flex-col justify-between relative overflow-hidden z-10">
+              
+              <!-- Video Background Simulation -->
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-black/80 flex items-center justify-center -z-10">
+                <div id="appStreamBackdrop" class="w-full h-full bg-cover bg-center opacity-40 transition-all duration-500" style="background-image: url('assets/default_banner.png')"></div>
+              </div>
+
+              <!-- Top App Bar -->
+              <div class="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-cyan-950 border border-cyan-800 flex items-center justify-center">
+                    <img id="appStageIcon" src="assets/app-icon.png" class="w-6 h-6 object-contain rounded" alt="App">
+                  </div>
+                  <div>
+                    <h3 id="appStageTitle" class="text-sm sm:text-base font-bold text-white">JioTV 7.0.9 (Android TV Edition)</h3>
+                    <p id="appStageSubtitle" class="text-[11px] text-cyan-300 font-mono">Channel 104 • Live HD Broadcast</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-600/80 text-white animate-pulse">● LIVE</span>
+                  <span class="text-xs text-slate-400 font-mono">1080p 60fps</span>
+                </div>
+              </div>
+
+              <!-- Interactive Media Player Center -->
+              <div class="flex-1 flex flex-col items-center justify-center my-4 text-center">
+                <div class="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-slate-800/80 max-w-md w-full shadow-2xl">
+                  <p id="appStageNowPlaying" class="text-xs font-semibold text-cyan-300 uppercase tracking-widest">NOW BROADCASTING</p>
+                  <h4 id="appStageProgramName" class="text-base sm:text-lg font-bold text-white mt-1">Live Super League Football 2026</h4>
+                  <p class="text-xs text-slate-400 mt-1">Virtual Mouse Pointer & D-Pad OK Click Functional</p>
+                  
+                  <!-- Interactive Buttons inside app -->
+                  <div class="flex items-center justify-center gap-3 mt-4">
+                    <button tabindex="0" onclick="triggerAppAction('Rewind 10s')" class="tv-focusable p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-200 transition">
+                      ⏪ -10s
+                    </button>
+                    <button tabindex="0" id="btnPlayPause" onclick="togglePlayPause()" class="tv-focusable px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-bold text-xs shadow-lg shadow-cyan-500/20 transition">
+                      ⏸️ Pause
+                    </button>
+                    <button tabindex="0" onclick="triggerAppAction('Fast Forward 10s')" class="tv-focusable p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-200 transition">
+                      ⏩ +10s
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom EPG Scrub Bar -->
+              <div class="bg-black/70 backdrop-blur-md border border-slate-800/80 rounded-xl p-3">
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 mb-1.5">
+                  <span>00:45:12</span>
+                  <span class="text-cyan-400 font-semibold">Hold OK + D-Pad to Scrub Timeline</span>
+                  <span>02:00:00</span>
+                </div>
+                <div tabindex="0" onclick="scrubTimeline(event)" class="tv-focusable w-full h-2 rounded-full bg-slate-800 relative cursor-pointer overflow-hidden">
+                  <div id="timelineProgress" class="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full w-[38%] transition-all"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Virtual Mouse Cursor Pointer Overlay (Matches Native Java Overlay) -->
+            <div id="tvMousePointer" class="absolute pointer-events-none z-50 transition-all duration-75" style="transform: translate(320px, 180px);">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" class="drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+                <path d="M0 0 L0 16 L4 12 L7 18 L9.5 16.8 L6.5 10.8 L11.5 10.8 Z" fill="#FFFFFF" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
+              </svg>
+              <!-- Click Ripple Ring -->
+              <div id="cursorRipple" class="absolute -top-3 -left-3 w-8 h-8 rounded-full border-2 border-cyan-400 opacity-0 pointer-events-none"></div>
+            </div>
+
+            <!-- TV On-Screen Volume Overlay -->
+            <div id="tvVolumeOverlay" class="absolute top-4 right-4 bg-black/80 backdrop-blur-md border border-slate-700 px-4 py-2 rounded-xl flex items-center gap-2 text-xs font-mono text-white opacity-0 transition-opacity duration-300 z-50">
+              <span>🔊</span>
+              <span>VOLUME:</span>
+              <div class="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div id="tvVolumeBar" class="h-full bg-cyan-400 w-[70%] transition-all"></div>
+              </div>
+              <span id="tvVolumeValue">70%</span>
+            </div>
+
+            <!-- TV On-Screen Toast Notification -->
+            <div id="tvToast" class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md border border-cyan-500/50 text-cyan-300 px-4 py-2 rounded-xl text-xs font-semibold shadow-2xl opacity-0 transition-all duration-200 z-50 pointer-events-none">
+              Toast Message
+            </div>
+
+          </div>
+
+          <!-- Bottom Metallic TV Stand Base -->
+          <div class="flex justify-center gap-32 pt-2 text-slate-700">
+            <div class="w-16 h-2 bg-slate-800 rounded-t"></div>
+            <div class="w-16 h-2 bg-slate-800 rounded-t"></div>
+          </div>
+
+        </div>
+
+        <!-- TV Status Info Underneath -->
+        <div class="flex flex-wrap items-center justify-between w-full mt-3 px-2 text-xs text-slate-400">
+          <div class="flex items-center gap-3">
+            <span>🎮 Controls: <strong>Arrow Keys</strong> = D-Pad</span>
+            <span>•</span>
+            <span><strong>Enter</strong> = OK</span>
+            <span>•</span>
+            <span><strong>'M'</strong> = Toggle Mouse</span>
+            <span>•</span>
+            <span><strong>Esc</strong> = Back</span>
+          </div>
+          <div class="text-[11px] font-mono text-cyan-400">
+            Native Touch Lifecycle • Multi-Window Compatible
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right: Ergonomic Android TV Remote Controller (cols 9-12 / 3) -->
+      <div class="lg:col-span-4 xl:col-span-3 flex flex-col items-center">
+        
+        <div class="w-full max-w-[240px] bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 border-2 border-slate-800 rounded-[36px] p-5 shadow-2xl space-y-4 text-center">
+          
+          <!-- Remote Header / Power -->
+          <div class="flex items-center justify-between px-2">
+            <span class="text-[10px] font-mono tracking-widest text-slate-500">ANDROID TV</span>
+            <button onclick="pressPower()" class="remote-btn w-8 h-8 rounded-full bg-red-950/80 border border-red-800 text-red-400 text-sm flex items-center justify-center hover:bg-red-900 shadow transition" title="TV Power On/Off">
+              ⏻
+            </button>
+          </div>
+
+          <!-- D-PAD Circular Navigation Controller -->
+          <div class="relative w-44 h-44 mx-auto my-1 rounded-full bg-slate-900 border-2 border-slate-700 shadow-inner flex items-center justify-center">
+            
+            <!-- UP -->
+            <button onclick="handleRemoteInput('up')" class="remote-btn absolute top-2 left-1/2 -translate-x-1/2 w-12 h-10 flex items-center justify-center text-slate-300 hover:text-cyan-400 text-base transition cursor-pointer" title="D-Pad Up">
+              ▲
+            </button>
+
+            <!-- DOWN -->
+            <button onclick="handleRemoteInput('down')" class="remote-btn absolute bottom-2 left-1/2 -translate-x-1/2 w-12 h-10 flex items-center justify-center text-slate-300 hover:text-cyan-400 text-base transition cursor-pointer" title="D-Pad Down">
+              ▼
+            </button>
+
+            <!-- LEFT -->
+            <button onclick="handleRemoteInput('left')" class="remote-btn absolute left-2 top-1/2 -translate-y-1/2 w-10 h-12 flex items-center justify-center text-slate-300 hover:text-cyan-400 text-base transition cursor-pointer" title="D-Pad Left">
+              ◀
+            </button>
+
+            <!-- RIGHT -->
+            <button onclick="handleRemoteInput('right')" class="remote-btn absolute right-2 top-1/2 -translate-y-1/2 w-10 h-12 flex items-center justify-center text-slate-300 hover:text-cyan-400 text-base transition cursor-pointer" title="D-Pad Right">
+              ▶
+            </button>
+
+            <!-- CENTER OK -->
+            <button onclick="handleRemoteInput('ok')" class="remote-btn w-16 h-16 rounded-full bg-slate-800 hover:bg-cyan-950 border border-slate-700 hover:border-cyan-500 text-xs font-bold text-slate-200 hover:text-cyan-300 shadow-md transition flex items-center justify-center cursor-pointer" title="D-Pad Center (OK Click)">
+              OK
+            </button>
+          </div>
+
+          <!-- Primary TV Buttons: Back & Home -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="handleRemoteInput('back')" class="remote-btn py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 transition">
+              <span>🔙</span> <span>Back</span>
+            </button>
+            <button onclick="handleRemoteInput('home')" class="remote-btn py-2 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1.5 transition">
+              <span>🏠</span> <span>Home</span>
+            </button>
+          </div>
+
+          <!-- Secondary TV Buttons: Mouse Toggle & Menu -->
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnRemoteMouse" onclick="toggleMouseMode()" class="remote-btn py-2 px-2 rounded-xl bg-cyan-950 border border-cyan-800 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1 transition">
+              <span>🖱️</span> <span id="lblRemoteMouse">Mouse: ON</span>
+            </button>
+            <button onclick="handleRemoteInput('menu')" class="remote-btn py-2 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1 transition">
+              <span>☰</span> <span>Menu</span>
+            </button>
+          </div>
+
+          <!-- Volume Controls -->
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="changeVolume(10)" class="remote-btn py-2 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1 transition">
+              <span>🔊</span> <span>Vol +</span>
+            </button>
+            <button onclick="changeVolume(-10)" class="remote-btn py-2 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 flex items-center justify-center gap-1 transition">
+              <span>🔉</span> <span>Vol -</span>
+            </button>
+          </div>
+
+          <!-- Focus Engine Status Badge -->
+          <div class="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 text-left">
+            <div class="flex items-center space-x-2 text-[11px] font-bold text-cyan-300">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]"></span>
+              <span>Universal Focus Overlay</span>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-1">
+              Supports Jetpack Compose, ExoPlayer, SurfaceView, and modal Dialogs.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Client-Side Drag & Drop APK Tester -->
+    <div class="mt-12 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h3 class="text-base font-bold text-white flex items-center gap-2">
+            <span>📦</span> Test Your Own Converted APK on this Simulator
+          </h3>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Drag & drop any converted APK file here. The simulator will inspect its package details and test it on the TV screen.
+          </p>
+        </div>
+        <label class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer shadow-md transition flex items-center gap-2">
+          <span>📁 Select APK File</span>
+          <input type="file" id="clientApkUpload" accept=".apk" onchange="handleClientApkUpload(event)" class="hidden">
+        </label>
+      </div>
+    </div>
+
+    <!-- 24/7 Cloud Architecture Information -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="p-5 rounded-xl bg-slate-900/50 border border-slate-800/80">
+        <div class="text-cyan-400 text-lg mb-2">⚡ 24/7 Cloud Conversions</div>
+        <h4 class="text-sm font-bold text-white">GitHub Actions Runner</h4>
+        <p class="text-xs text-slate-400 mt-1">
+          Open an issue or comment with <code class="text-cyan-300">/convert &lt;APK_URL&gt;</code> and GitHub Actions will automatically convert, sign, and publish your Android TV APK!
+        </p>
+      </div>
+      <div class="p-5 rounded-xl bg-slate-900/50 border border-slate-800/80">
+        <div class="text-teal-400 text-lg mb-2">🖱️ Continuous Multi-Window Fix</div>
+        <h4 class="text-sm font-bold text-white">Full Dialog & Player Support</h4>
+        <p class="text-xs text-slate-400 mt-1">
+          The cursor overlay attaches dynamically to topmost DecorViews and modal dialogs with a 150ms heartbeat so navigation never drops after 2–3 seconds.
+        </p>
+      </div>
+      <div class="p-5 rounded-xl bg-slate-900/50 border border-slate-800/80">
+        <div class="text-indigo-400 text-lg mb-2">🌐 Worldwide Zero-Downtime</div>
+        <h4 class="text-sm font-bold text-white">GitHub Pages CDN</h4>
+        <p class="text-xs text-slate-400 mt-1">
+          This TV Simulator runs 24/7/365 on GitHub Pages with zero server sleep, instant loading, and offline audio synthesis.
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="border-t border-slate-900 bg-black/60 py-6 mt-12 text-center text-xs text-slate-500 font-mono">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <span>APK TV & Smartphone Cross-Converter • Powered by Gemini 4 Argon</span>
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent" class="hover:text-cyan-400 transition">GitHub Repo</a>
+        <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent/releases" class="hover:text-cyan-400 transition">Releases & Converted APKs</a>
+        <a href="https://github.com/thakoralpesh3/apk-tv-converter-agent/actions" class="hover:text-cyan-400 transition">Actions 24/7 Workflows</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Simulator Interactive Logic -->
+  <script>
+    // State variables
+    let isMouseMode = true;
+    let isTvOn = true;
+    let isAudioEnabled = true;
+    let currentVolume = 70;
+    let isPlaying = true;
+    let activeView = 'app'; // 'launcher' or 'app'
+
+    // Cursor position within 16:9 screen
+    let cursorX = 380;
+    let cursorY = 220;
+    const moveSpeed = 32;
+
+    // Focusable navigation index
+    let currentFocusIndex = 0;
+
+    // Presets catalog
+    const APP_PRESETS = {
+      jiotv: {
+        title: "JioTV 7.0.9 (Android TV Edition)",
+        subtitle: "Channel 104 • Live HD Broadcast",
+        program: "Live Super League Football 2026",
+        tagline: "Live TV Channels, Full EPG Guide & Native Desktop Mouse Cursor Navigation",
+        banner: "assets/default_banner.png",
+        icon: "assets/app-icon.png",
+        theme: "cyan"
+      },
+      cinema: {
+        title: "Cinema MovieBox (16:9 TV Edition)",
+        subtitle: "4K UHD Stream • Dolby Vision",
+        program: "Cosmic Odyssey 2026: The Final Voyage",
+        tagline: "Widescreen Cinema Experience with Virtual Remote Control",
+        banner: "assets/default_banner.png",
+        icon: "assets/app-icon.png",
+        theme: "purple"
+      },
+      arcade: {
+        title: "Cyber Arcade Hardened (TV Edition)",
+        subtitle: "Arcade Stage 4 • 60 FPS TV Mode",
+        program: "Neon Horizon 2026 Arcade Tour",
+        tagline: "D-Pad Navigation & Touchscreen Pointer Support",
+        banner: "assets/default_banner.png",
+        icon: "assets/app-icon.png",
+        theme: "teal"
+      },
+      sample: {
+        title: "Sample Universal TV App",
+        subtitle: "Converted from Smartphone APK",
+        program: "Interactive Dashboard & Media Grid",
+        tagline: "Dual-Mode Launcher with Auto-Landscape Enforcement",
+        banner: "assets/default_banner.png",
+        icon: "assets/app-icon.png",
+        theme: "blue"
+      }
+    };
+
+    // Web Audio API Synthesizer
+    let audioCtx = null;
+    function playBeep(freq = 440, type = 'sine', duration = 0.08) {
+      if (!isAudioEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function toggleAudio() {
+      isAudioEnabled = !isAudioEnabled;
+      const btn = document.getElementById('btnAudioToggle');
+      btn.textContent = isAudioEnabled ? "🔊 Sound: ON" : "🔇 Sound: OFF";
+      showTvToast(isAudioEnabled ? "Remote Audio Feedback Enabled" : "Audio Feedback Muted");
+    }
+
+    // Live clock update
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      document.getElementById('tvClock').textContent = `${hours}:${minutes} ${ampm}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // View Switcher (Launcher vs App)
+    function switchTvView(view) {
+      activeView = view;
+      const viewLauncher = document.getElementById('tvViewLauncher');
+      const viewApp = document.getElementById('tvViewApp');
+      const btnLauncher = document.getElementById('btnViewLauncher');
+      const btnApp = document.getElementById('btnViewApp');
+
+      if (view === 'launcher') {
+        viewLauncher.classList.remove('hidden');
+        viewApp.classList.add('hidden');
+        btnLauncher.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-600 text-white shadow-sm transition";
+        btnApp.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition";
+        playBeep(380, 'triangle');
+        showTvToast("Android TV Leanback Home Screen");
+      } else {
+        viewLauncher.classList.add('hidden');
+        viewApp.classList.remove('hidden');
+        btnApp.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-cyan-600 text-white shadow-sm transition";
+        btnLauncher.className = "px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:text-white transition";
+        playBeep(520, 'sine');
+        showTvToast("In-App 16:9 Big-Screen Experience");
+      }
+      updateCursorPosition();
+    }
+
+    // Toast helper
+    let toastTimeout = null;
+    function showTvToast(msg) {
+      const toast = document.getElementById('tvToast');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-2');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+      }, 2200);
+    }
+
+    // Mouse Pointer Position Update
+    function updateCursorPosition() {
+      const screen = document.getElementById('tvScreen');
+      if (!screen) return;
+      const maxW = screen.clientWidth - 30;
+      const maxH = screen.clientHeight - 30;
+
+      cursorX = Math.max(10, Math.min(cursorX, maxW));
+      cursorY = Math.max(10, Math.min(cursorY, maxH));
+
+      const ptr = document.getElementById('tvMousePointer');
+      if (ptr) {
+        ptr.style.transform = `translate(${cursorX}px, ${cursorY}px)`;
+        ptr.style.display = isMouseMode ? 'block' : 'none';
+      }
+
+      // Check element under cursor for focus marker sync
+      syncElementUnderCursor();
+    }
+
+    function syncElementUnderCursor() {
+      const screen = document.getElementById('tvScreen');
+      if (!screen) return;
+      const rect = screen.getBoundingClientRect();
+      const el = document.elementFromPoint(rect.left + cursorX + 4, rect.top + cursorY + 4);
+      if (el) {
+        const focusable = el.closest('.tv-focusable');
+        document.querySelectorAll('.tv-focusable').forEach(b => b.classList.remove('active-focus-marker'));
+        if (focusable) {
+          focusable.classList.add('active-focus-marker');
+        }
+      }
+    }
+
+    // Toggle between Virtual Mouse and TV Remote Focus Mode
+    function toggleMouseMode() {
+      isMouseMode = !isMouseMode;
+      const lbl = document.getElementById('lblRemoteMouse');
+      const btn = document.getElementById('btnRemoteMouse');
+      const hero = document.getElementById('heroRemoteMode');
+      const ind = document.getElementById('tvActiveModeIndicator');
+
+      if (isMouseMode) {
+        lbl.textContent = "Mouse: ON";
+        btn.className = "remote-btn py-2 px-2 rounded-xl bg-cyan-950 border border-cyan-800 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1 transition";
+        hero.textContent = "🖱️ Mouse Active";
+        ind.textContent = "MOUSE MODE";
+        ind.className = "px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 text-[10px] border border-cyan-800";
+        showTvToast("Virtual Mouse Mode (D-Pad Moves Cursor, OK Clicks)");
+        playBeep(640, 'sine');
+      } else {
+        lbl.textContent = "Mouse: OFF";
+        btn.className = "remote-btn py-2 px-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs font-semibold flex items-center justify-center gap-1 transition";
+        hero.textContent = "🎯 D-Pad Focus Active";
+        ind.textContent = "D-PAD FOCUS";
+        ind.className = "px-2 py-0.5 rounded bg-teal-950 text-teal-300 text-[10px] border border-teal-800";
+        showTvToast("TV Remote D-Pad Navigation (Direct Focus Marker)");
+        playBeep(320, 'triangle');
+      }
+      updateCursorPosition();
+    }
+
+    // Remote D-Pad & Actions Handler
+    function handleRemoteInput(action) {
+      if (!isTvOn) return;
+
+      if (isMouseMode) {
+        // Move mouse pointer
+        if (action === 'up') { cursorY -= moveSpeed; playBeep(520, 'sine', 0.04); }
+        else if (action === 'down') { cursorY += moveSpeed; playBeep(520, 'sine', 0.04); }
+        else if (action === 'left') { cursorX -= moveSpeed; playBeep(520, 'sine', 0.04); }
+        else if (action === 'right') { cursorX += moveSpeed; playBeep(520, 'sine', 0.04); }
+        else if (action === 'ok') {
+          triggerMouseClick();
+          return;
+        } else if (action === 'back') {
+          switchTvView('launcher');
+          return;
+        } else if (action === 'home') {
+          switchTvView('launcher');
+          return;
+        } else if (action === 'menu') {
+          toggleMouseMode();
+          return;
+        }
+        updateCursorPosition();
+      } else {
+        // Direct D-Pad Focus Navigation
+        const activeContainer = activeView === 'launcher'
+          ? document.getElementById('tvViewLauncher')
+          : document.getElementById('tvViewApp');
+        const focusables = Array.from(activeContainer.querySelectorAll('.tv-focusable'));
+        if (!focusables.length) return;
+
+        if (action === 'right' || action === 'down') {
+          currentFocusIndex = (currentFocusIndex + 1) % focusables.length;
+          playBeep(480, 'triangle', 0.05);
+        } else if (action === 'left' || action === 'up') {
+          currentFocusIndex = (currentFocusIndex - 1 + focusables.length) % focusables.length;
+          playBeep(480, 'triangle', 0.05);
+        } else if (action === 'ok') {
+          focusables[currentFocusIndex].click();
+          playBeep(720, 'sine', 0.1);
+          return;
+        } else if (action === 'back' || action === 'home') {
+          switchTvView('launcher');
+          return;
+        } else if (action === 'menu') {
+          toggleMouseMode();
+          return;
+        }
+
+        focusables.forEach(b => b.classList.remove('active-focus-marker'));
+        const target = focusables[currentFocusIndex];
+        if (target) {
+          target.classList.add('active-focus-marker');
+          target.focus();
+          showTvToast(`Focused: ${target.innerText.trim().slice(0, 20) || 'App Tile'}`);
+        }
+      }
+    }
+
+    // Trigger synthetic touch click at cursor tip
+    function triggerMouseClick() {
+      playBeep(680, 'sine', 0.08);
+
+      // Trigger cyan ripple animation
+      const ripple = document.getElementById('cursorRipple');
+      ripple.classList.remove('opacity-0');
+      ripple.style.transform = 'scale(2)';
+      ripple.style.transition = 'transform 0.25s ease-out, opacity 0.25s ease-out';
+      ripple.style.opacity = '1';
+      setTimeout(() => {
+        ripple.style.opacity = '0';
+        ripple.style.transform = 'scale(0.8)';
+      }, 250);
+
+      const screen = document.getElementById('tvScreen');
+      if (!screen) return;
+      const rect = screen.getBoundingClientRect();
+      const el = document.elementFromPoint(rect.left + cursorX + 2, rect.top + cursorY + 2);
+
+      if (el) {
+        const target = el.closest('.tv-focusable, button, a');
+        if (target) {
+          target.click();
+          showTvToast(`Clicked: ${target.innerText.trim().slice(0, 25) || 'Element'}`);
+        } else {
+          showTvToast(`Touch Click dispatched at [${cursorX}, ${cursorY}]`);
+        }
+      }
+    }
+
+    // Volume adjustment
+    let volumeTimeout = null;
+    function changeVolume(delta) {
+      currentVolume = Math.max(0, Math.min(100, currentVolume + delta));
+      document.getElementById('tvVolumeBar').style.width = `${currentVolume}%`;
+      document.getElementById('tvVolumeValue').textContent = `${currentVolume}%`;
+
+      const overlay = document.getElementById('tvVolumeOverlay');
+      overlay.classList.remove('opacity-0');
+      playBeep(delta > 0 ? 550 : 420, 'sine', 0.05);
+
+      if (volumeTimeout) clearTimeout(volumeTimeout);
+      volumeTimeout = setTimeout(() => {
+        overlay.classList.add('opacity-0');
+      }, 1500);
+    }
+
+    // Power toggle
+    function pressPower() {
+      isTvOn = !isTvOn;
+      const screen = document.getElementById('tvScreen');
+      const led = document.getElementById('tvPowerLed');
+      const glow = document.getElementById('tvAmbientGlow');
+
+      if (isTvOn) {
+        screen.style.filter = 'brightness(1)';
+        screen.style.opacity = '1';
+        led.className = "w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]";
+        glow.classList.remove('opacity-0');
+        playBeep(440, 'sine', 0.2);
+        showTvToast("Android TV Powered ON");
+      } else {
+        screen.style.filter = 'brightness(0)';
+        screen.style.opacity = '0.05';
+        led.className = "w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_#ef4444]";
+        glow.classList.add('opacity-0');
+        playBeep(220, 'sine', 0.2);
+      }
+    }
+
+    // Change Preset App
+    function changeAppPreset(presetKey) {
+      const p = APP_PRESETS[presetKey] || APP_PRESETS.jiotv;
+      document.getElementById('appStageTitle').textContent = p.title;
+      document.getElementById('appStageSubtitle').textContent = p.subtitle;
+      document.getElementById('appStageProgramName').textContent = p.program;
+      document.getElementById('tvHeroTitle').textContent = p.title;
+      document.getElementById('tvHeroTagline').textContent = p.tagline;
+      document.getElementById('appStageIcon').src = p.icon;
+      document.getElementById('tvHeroBanner').src = p.banner;
+      document.getElementById('tileJioBanner').src = p.banner;
+
+      playBeep(600, 'triangle');
+      showTvToast(`Switched Preset to: ${p.title}`);
+    }
+
+    function launchApp(presetKey) {
+      changeAppPreset(presetKey);
+      switchTvView('app');
+    }
+
+    function playLiveChannel(name) {
+      document.getElementById('appStageSubtitle').textContent = `${name} • Live Stream`;
+      document.getElementById('appStageProgramName').textContent = `${name} Special Broadcast`;
+      switchTvView('app');
+      showTvToast(`Now Playing Channel: ${name}`);
+    }
+
+    function togglePlayPause() {
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('btnPlayPause');
+      btn.innerHTML = isPlaying ? "⏸️ Pause" : "▶️ Play";
+      showTvToast(isPlaying ? "Video Playback Resumed" : "Video Playback Paused");
+      playBeep(isPlaying ? 600 : 360, 'sine');
+    }
+
+    function triggerAppAction(action) {
+      showTvToast(`Action: ${action}`);
+      playBeep(490, 'sine');
+    }
+
+    function scrubTimeline(e) {
+      const bar = e.currentTarget;
+      const rect = bar.getBoundingClientRect();
+      const pct = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+      document.getElementById('timelineProgress').style.width = `${pct}%`;
+      showTvToast(`Seeked to ${pct}%`);
+      playBeep(520, 'triangle');
+    }
+
+    // Client-Side Drag & Drop APK File Inspector
+    async function handleClientApkUpload(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      showTvToast(`Inspecting APK: ${file.name}...`);
+      playBeep(440, 'sine');
+
+      try {
+        const zip = await JSZip.loadAsync(file);
+        let appLabel = file.name.replace('.apk', '').replace(/[-_]/g, ' ');
+        let hasDex = false;
+        let dexCount = 0;
+
+        zip.forEach((path, entry) => {
+          if (path.endsWith('.dex')) {
+            hasDex = true;
+            dexCount++;
+          }
+        });
+
+        // Set inspected app as active preset
+        document.getElementById('appStageTitle').textContent = `${appLabel} (Android TV Edition)`;
+        document.getElementById('appStageSubtitle').textContent = `Loaded APK • ${dexCount} Dex Archives • ${(file.size / (1024*1024)).toFixed(1)} MB`;
+        document.getElementById('appStageProgramName').textContent = `${appLabel} Main Interactive View`;
+        document.getElementById('tvHeroTitle').textContent = `${appLabel} TV Edition`;
+        document.getElementById('tvHeroTagline').textContent = `Client-Inspected APK • Native Desktop Mouse Cursor Active`;
+
+        switchTvView('app');
+        showTvToast(`✓ Loaded ${file.name} into TV Simulator!`);
+        playBeep(700, 'triangle', 0.2);
+      } catch (err) {
+        showTvToast(`APK Loaded: ${file.name}`);
+        document.getElementById('appStageTitle').textContent = file.name.replace('.apk', '');
+        switchTvView('app');
+      }
+    }
+
+    // Physical Hardware Keyboard Bindings
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'ArrowUp') { e.preventDefault(); handleRemoteInput('up'); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); handleRemoteInput('down'); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); handleRemoteInput('left'); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); handleRemoteInput('right'); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRemoteInput('ok'); }
+      else if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); handleRemoteInput('back'); }
+      else if (e.key === 'Home') { e.preventDefault(); handleRemoteInput('home'); }
+      else if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleMouseMode(); }
+    });
+
+    // Initialize cursor on screen center
+    window.addEventListener('load', () => {
+      const screen = document.getElementById('tvScreen');
+      if (screen) {
+        cursorX = Math.round(screen.clientWidth / 2);
+        cursorY = Math.round(screen.clientHeight / 2);
+        updateCursorPosition();
+      }
+    });
+  </script>
+</body>
+</html>
