@@ -23,6 +23,7 @@ import android.view.MotionEvent;
 import android.view.SearchEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
@@ -39,8 +40,9 @@ import java.util.List;
 /**
  * Universal Native Android TV Desktop Mouse Cursor Engine.
  * Features:
- *  - Continuous Multi-Window & Dialog Event Interception via WindowManagerGlobal
+ *  - Persistent Multi-Window & Dialog Event Interception via WindowManagerGlobal
  *  - Dynamic Floating Overlay: auto-attaches to topmost visible window or modal dialog
+ *  - Unbreakable continuous cursor movement & interaction across all screens, activities, dialogs
  *  - Cross-Activity & Cross-Window Shared State (never resets during activity transitions)
  *  - Native Touch-Event Lifecycle (Accurate DOWN -> MOVE -> UP with human press duration)
  *  - Full Jetpack Compose & Android View interaction (single clean channel, zero cancelation)
@@ -76,7 +78,7 @@ public class TvDesktopCursorOverlay {
     private static float sDownY = 0;
     private static boolean sHasDragged = false;
 
-    // Self-healing continuous heartbeat (runs every 150ms)
+    // Self-healing continuous heartbeat (runs every 100ms)
     private static final Runnable sHeartbeatRunnable = new Runnable() {
         @Override
         public void run() {
@@ -84,7 +86,7 @@ public class TvDesktopCursorOverlay {
                 ensureAllWindowCallbacksWrapped();
                 ensureOverlayAttachedToTopmost();
             } catch (Throwable ignored) {}
-            sMainHandler.postDelayed(this, 150);
+            sMainHandler.postDelayed(this, 100);
         }
     };
 
@@ -106,12 +108,21 @@ public class TvDesktopCursorOverlay {
                 sCurrentActivityRef = new WeakReference<>(activity);
                 enforceLandscape(activity);
                 handleSpecialAppStartup(activity);
+                sMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        ensureAllWindowCallbacksWrapped();
+                        ensureOverlayAttachedToTopmost();
+                    }
+                });
             }
 
             @Override
             public void onActivityStarted(Activity activity) {
                 sCurrentActivityRef = new WeakReference<>(activity);
                 enforceLandscape(activity);
+                ensureAllWindowCallbacksWrapped();
+                ensureOverlayAttachedToTopmost();
             }
 
             @Override
@@ -135,7 +146,13 @@ public class TvDesktopCursorOverlay {
             @Override
             public void onActivityDestroyed(Activity activity) {
                 if (sCurrentActivityRef.get() == activity) {
-                    sCurrentActivityRef = new WeakReference<>(null);
+                    // Try to fallback to any remaining active activity from all window views
+                    ViewGroup nextTop = getTopmostDecorView();
+                    if (nextTop != null && nextTop.getContext() instanceof Activity) {
+                        sCurrentActivityRef = new WeakReference<>((Activity) nextTop.getContext());
+                    } else {
+                        sCurrentActivityRef = new WeakReference<>(null);
+                    }
                 }
             }
         });
@@ -182,19 +199,26 @@ public class TvDesktopCursorOverlay {
             }, 300);
         }
 
-        // 2. JioTV HomeActivity Onboarding & Modal Dialog Auto-Handling
+        // 2. JioTV HomeActivity Onboarding, Language Selection & Modal Dialog Auto-Handling
         if (name.contains("HomeActivity")) {
             try {
-                // Pre-seed shared preferences to suppress mobile onboarding popups
+                // Pre-seed shared preferences to suppress mobile onboarding popups & force default language
                 SharedPreferences p1 = activity.getSharedPreferences("com.jio.jioplay.tv.activities.HomeActivity", 0);
                 p1.edit().putBoolean("dialogShown", true).apply();
 
                 SharedPreferences p2 = activity.getSharedPreferences("shared_preference", 0);
-                p2.edit().putBoolean("dialogShown", true).putBoolean("default_launch", true).apply();
+                p2.edit()
+                    .putBoolean("dialogShown", true)
+                    .putBoolean("default_launch", true)
+                    .putBoolean("isLanguageOnBoardingEnabled", false)
+                    .apply();
+
+                SharedPreferences p3 = activity.getSharedPreferences("user_pref", 0);
+                p3.edit().putBoolean("isLanguageSelected", true).apply();
             } catch (Throwable ignored) {}
 
-            // Auto-dismiss or confirm any startup onboarding dialogs (e.g. DefaultLaunchDialog, DarkMode popup)
-            for (int delay : new int[]{ 500, 1000, 1800, 2500 }) {
+            // Auto-dismiss or confirm any startup onboarding dialogs (e.g. DefaultLaunchDialog, LanguageOnBoardingDialog, DarkMode popup)
+            for (int delay : new int[]{ 400, 800, 1500, 2500, 4000 }) {
                 sMainHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
@@ -216,6 +240,16 @@ public class TvDesktopCursorOverlay {
                                 int noThanksId = activity.getResources().getIdentifier("no_thanks", "id", activity.getPackageName());
                                 if (noThanksId != 0) {
                                     View btn = top.findViewById(noThanksId);
+                                    if (btn != null && btn.isClickable()) {
+                                        btn.performClick();
+                                        return;
+                                    }
+                                }
+
+                                // LanguageOnBoarding proceed/save button (btn_save / btn_continue)
+                                int btnSaveId = activity.getResources().getIdentifier("btn_save", "id", activity.getPackageName());
+                                if (btnSaveId != 0) {
+                                    View btn = top.findViewById(btnSaveId);
                                     if (btn != null && btn.isClickable()) {
                                         btn.performClick();
                                         return;
@@ -330,7 +364,7 @@ public class TvDesktopCursorOverlay {
     }
 
     /**
-     * Resolves the currently active topmost visible DecorView (modal dialog or activity).
+     * Resolves the currently active topmost visible DecorView (modal dialog, popup, or activity).
      */
     public static ViewGroup getTopmostDecorView() {
         List<View> views = getAllWindowViews();
@@ -367,7 +401,7 @@ public class TvDesktopCursorOverlay {
     }
 
     /**
-     * Scans and wraps the Window.Callback of the current activity and ALL active dialogs/popups.
+     * Scans and wraps the Window.Callback of all active activities, Dialogs, Popups, and Sub-window roots.
      */
     public static void ensureAllWindowCallbacksWrapped() {
         // 1. Wrap the current active activity window
@@ -456,6 +490,20 @@ public class TvDesktopCursorOverlay {
             }
             topmost.addView(sOverlayLayout);
             sAttachedDecorRef = new WeakReference<>(topmost);
+
+            // Add OnDrawListener / PreDrawListener to guarantee overlay stays brought to front
+            topmost.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    if (sOverlayLayout != null && sOverlayLayout.getParent() != null) {
+                        ViewGroup p = (ViewGroup) sOverlayLayout.getParent();
+                        if (p.getChildAt(p.getChildCount() - 1) != sOverlayLayout) {
+                            sOverlayLayout.bringToFront();
+                        }
+                    }
+                    return true;
+                }
+            });
         }
 
         // 4. Ensure overlay stays on top and synchronized with current coordinates
@@ -791,6 +839,8 @@ public class TvDesktopCursorOverlay {
 
         @Override
         public void onContentChanged() {
+            ensureAllWindowCallbacksWrapped();
+            ensureOverlayAttachedToTopmost();
             if (mOriginal != null) mOriginal.onContentChanged();
         }
 
