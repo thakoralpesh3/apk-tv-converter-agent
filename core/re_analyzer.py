@@ -247,9 +247,10 @@ class ReverseEngineeringAnalyzer:
         elif has(r"^lib/[^/]+/libhermes\.so$") or has(r"^assets/index\.android\.bundle$") or has(r"^lib/[^/]+/libreactnativejni\.so$"):
             framework = "React Native"
             rationale = "React Native bundle / libhermes detected"
-        elif has(r"^assets/www/index\.html$") or has(r"^assets/public/index\.html$") or has(r"^assets/index\.html$"):
-            framework = "Cordova / Capacitor (WebView hybrid)"
-            rationale = "HTML5 web application bundle in assets/"
+        elif has(r"^assets/www/index\.html$") or has(r"^assets/public/index\.html$") or has(r"^assets/index\.html$") or has(r"electron"):
+            is_electron = has(r"electron") or has(r"app\.asar")
+            framework = "Electron / Chromium Hybrid Bundle" if is_electron else "Cordova / Capacitor (WebView hybrid)"
+            rationale = "Electron/Chromium desktop or HTML5 web bundle detected in assets" if is_electron else "HTML5 web application bundle in assets/"
         elif has(r"^lib/[^/]+/libmonodroid\.so$") or has(r"^assemblies/"):
             framework = "Xamarin / .NET MAUI"
             rationale = ".NET assemblies / libmonodroid present"
@@ -340,7 +341,7 @@ class ReverseEngineeringAnalyzer:
                 "hardware_accelerate": True,
                 "notes": "ReactRootView UI. Enforce full 16:9 widescreen resizeableActivity & remote focus marker."
             }
-        elif "Cordova" in framework or "WebView" in framework:
+        elif "Electron" in framework or "Cordova" in framework or "WebView" in framework:
             return {
                 "name": "Hybrid Web Assets Desktop Cursor Strategy",
                 "code": "STRATEGY_HYBRID_WEB",
