@@ -537,7 +537,25 @@ def _patch_smali_tv_cursor_and_orientation(decoded_dir: Path) -> int:
                         mod = True
                         patched += 1
 
-                # 2. Patch setRequestedOrientation portrait (0x1) to landscape (0x0)
+                # 2. Patch isSupportedDevice()Z -> return 1 (bypasses device incompatibility in JioTV & streaming apps)
+                if "isSupportedDevice()Z" in content:
+                    replacement = ".method public isSupportedDevice()Z\n    .locals 1\n    const/4 v0, 0x1\n    return v0\n.end method"
+                    new_c = re.sub(r"\.method (?:private|public|final) isSupportedDevice\(\)Z[\s\S]*?\.end method", replacement, content)
+                    if new_c != content:
+                        content = new_c
+                        mod = True
+                        patched += 1
+
+                # 3. Patch isRunningOnEmulator()Z -> return 0 (bypasses false emulator detection on Android TV boxes)
+                if "isRunningOnEmulator()Z" in content:
+                    replacement = ".method public isRunningOnEmulator()Z\n    .locals 1\n    const/4 v0, 0x0\n    return v0\n.end method"
+                    new_c = re.sub(r"\.method (?:private|public|final) isRunningOnEmulator\(\)Z[\s\S]*?\.end method", replacement, content)
+                    if new_c != content:
+                        content = new_c
+                        mod = True
+                        patched += 1
+
+                # 4. Patch setRequestedOrientation portrait (0x1) to landscape (0x0)
                 if "setRequestedOrientation" in content:
                     new_c = re.sub(
                         r"const/4 (v\d+), 0x1\s*(\n\s*invoke-virtual \{[^}]*, \1\}, Landroid/app/Activity;->setRequestedOrientation)",
