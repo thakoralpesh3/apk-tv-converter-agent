@@ -698,6 +698,36 @@ public class TvDesktopCursorOverlay {
         return null;
     }
 
+    public static void updateFocusHighlight(ViewGroup activeDecor) {
+        if (activeDecor == null || sFocusHighlightView == null) return;
+        try {
+            View target = null;
+            if (sCursorEnabled) {
+                View hit = findTopViewUnder(activeDecor, sCoords[0], sCoords[1]);
+                target = (hit != null) ? findClickableTarget(hit) : null;
+            } else {
+                target = activeDecor.findFocus();
+            }
+
+            if (target != null && target != activeDecor && target.getVisibility() == View.VISIBLE && target.getWidth() > 0 && target.getHeight() > 0) {
+                int[] loc = new int[2];
+                target.getLocationOnScreen(loc);
+                int[] decorLoc = new int[2];
+                activeDecor.getLocationOnScreen(decorLoc);
+
+                float pad = 4.0f;
+                float left = (loc[0] - decorLoc[0]) - pad;
+                float top = (loc[1] - decorLoc[1]) - pad;
+                float right = left + target.getWidth() + (pad * 2);
+                float bottom = top + target.getHeight() + (pad * 2);
+
+                sFocusHighlightView.setHighlightTarget(left, top, right, bottom, 14.0f);
+            } else {
+                sFocusHighlightView.clearHighlight();
+            }
+        } catch (Throwable ignored) {}
+    }
+
     private static void simulateSwipe(ViewGroup decorView, float startX, float startY, float endX, float endY) {
         if (decorView == null) return;
         try {
