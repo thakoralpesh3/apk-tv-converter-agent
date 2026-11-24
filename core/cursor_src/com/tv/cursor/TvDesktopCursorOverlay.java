@@ -321,19 +321,58 @@ public class TvDesktopCursorOverlay {
 
         // Clickable confirmation button identifiers across TV streaming apps
         String[] buttonIds = new String[]{
-            "confirmBtnId", "btn_continue", "btn_save", "no_thanks",
-            "btnDialogPositive", "btnPositive", "button1", "ok"
+            "confirmBtnId", "btn_continue", "btn_save", "no_thanks", "btn_skip",
+            "btnDialogPositive", "btnDialogNegative", "btnPositive", "btnNegative",
+            "button1", "button2", "button3", "ok", "cancel", "dismiss",
+            "permission_allow_button", "permission_deny_button"
         };
         for (String idName : buttonIds) {
-            int id = activity != null ? activity.getResources().getIdentifier(idName, "id", pkg) : 0;
+            int id = (activity != null && !pkg.isEmpty()) ? activity.getResources().getIdentifier(idName, "id", pkg) : 0;
+            if (id == 0 && activity != null) {
+                id = activity.getResources().getIdentifier(idName, "id", "android");
+            }
             if (id != 0) {
                 View btn = top.findViewById(id);
-                if (btn != null && btn.isClickable()) {
+                if (btn != null && btn.getVisibility() == View.VISIBLE) {
                     btn.performClick();
                     return;
                 }
             }
         }
+
+        dismissOrConfirmByText(top);
+    }
+
+    private static boolean dismissOrConfirmByText(View root) {
+        if (root == null || root.getVisibility() != View.VISIBLE) return false;
+        if (root instanceof TextView && root.isClickable()) {
+            CharSequence text = ((TextView) root).getText();
+            if (text != null) {
+                String str = text.toString().trim().toLowerCase();
+                if (str.equals("not now") || str.equals("later") || str.equals("skip") ||
+                    str.equals("no thanks") || str.equals("cancel") || str.equals("dismiss") ||
+                    str.equals("close") || str.equals("continue") || str.equals("agree") ||
+                    str.equals("ok") || str.equals("allow")) {
+                    root.performClick();
+                    return true;
+                }
+            }
+        }
+        if (root instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) root;
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                if (dismissOrConfirmByText(vg.getChildAt(i))) return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isNativeTouchWidget(View v) {
+        if (v == null) return false;
+        String name = v.getClass().getName();
+        return name.contains("Button") || name.contains("CheckBox") ||
+               name.contains("RadioButton") || name.contains("Switch") ||
+               name.contains("SeekBar");
     }
 
     private static void dismissDialogIfPresent(ViewGroup top) {
@@ -462,6 +501,15 @@ public class TvDesktopCursorOverlay {
             for (int i = views.size() - 1; i >= 0; i--) {
                 View v = views.get(i);
                 if (v instanceof ViewGroup && v.isShown() && v.getVisibility() == View.VISIBLE && v.getWidth() > 0 && v.getHeight() > 0) {
+                    if (v.getLayoutParams() instanceof WindowManager.LayoutParams) {
+                        WindowManager.LayoutParams lp = (WindowManager.LayoutParams) v.getLayoutParams();
+                        if ((lp.flags & WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) != 0) {
+                            continue;
+                        }
+                        if (lp.type == WindowManager.LayoutParams.TYPE_TOAST) {
+                            continue;
+                        }
+                    }
                     return (ViewGroup) v;
                 }
             }
@@ -469,6 +517,12 @@ public class TvDesktopCursorOverlay {
             for (int i = views.size() - 1; i >= 0; i--) {
                 View v = views.get(i);
                 if (v instanceof ViewGroup && v.getVisibility() == View.VISIBLE) {
+                    if (v.getLayoutParams() instanceof WindowManager.LayoutParams) {
+                        WindowManager.LayoutParams lp = (WindowManager.LayoutParams) v.getLayoutParams();
+                        if ((lp.flags & WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) != 0) {
+                            continue;
+                        }
+                    }
                     return (ViewGroup) v;
                 }
             }
