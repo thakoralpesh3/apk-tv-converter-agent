@@ -72,8 +72,10 @@ public class TvDesktopCursorOverlay {
 
     // Active cursor views
     private static CursorPointerView sPointerView;
+    private static FocusHighlightView sFocusHighlightView;
     private static FrameLayout sOverlayLayout;
     private static WeakReference<ViewGroup> sAttachedDecorRef = new WeakReference<>(null);
+    private static boolean sIsSyntheticDispatch = false;
 
     // Interaction state
     private static int sRepeatCount = 0;
