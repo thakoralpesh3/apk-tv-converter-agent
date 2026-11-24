@@ -34,6 +34,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
@@ -1258,6 +1259,95 @@ public class TvDesktopCursorOverlay {
 
             // Draw Inner White Pointer Body
             canvas.drawPath(mCursorPath, mFillPaint);
+        }
+    }
+
+    /**
+     * Standalone interactive focus highlight View (Hotstar / Netflix / Prime Video style).
+     * Draws an animated glowing rounded rectangle around the active or focused item.
+     */
+    public static class FocusHighlightView extends View {
+        private final Paint mBorderPaint;
+        private final Paint mGlowPaint;
+        private final RectF mCurrentRect = new RectF();
+        private final RectF mTargetRect = new RectF();
+        private float mCurrentRadius = 12f;
+        private float mTargetRadius = 12f;
+        private boolean mHasTarget = false;
+        private float mAlpha = 0f;
+
+        public FocusHighlightView(Context context) {
+            super(context);
+            setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+
+            mBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mBorderPaint.setStyle(Paint.Style.STROKE);
+            mBorderPaint.setColor(Color.parseColor("#00E5FF")); // Hotstar/Cyan TV active border
+            mBorderPaint.setStrokeWidth(4.0f);
+
+            mGlowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mGlowPaint.setStyle(Paint.Style.STROKE);
+            mGlowPaint.setColor(Color.parseColor("#3300E5FF")); // Subtle outer glow
+            mGlowPaint.setStrokeWidth(10.0f);
+        }
+
+        public void setHighlightTarget(float left, float top, float right, float bottom, float radius) {
+            mTargetRect.set(left, top, right, bottom);
+            mTargetRadius = radius > 0 ? radius : 12f;
+            if (!mHasTarget || mAlpha <= 0f) {
+                mCurrentRect.set(mTargetRect);
+                mCurrentRadius = mTargetRadius;
+                mAlpha = 255f;
+            }
+            mHasTarget = true;
+            postInvalidateOnAnimation();
+        }
+
+        public void clearHighlight() {
+            if (mHasTarget) {
+                mHasTarget = false;
+                postInvalidateOnAnimation();
+            }
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            if (!mHasTarget && mAlpha <= 0f) return;
+
+            if (mHasTarget) {
+                mAlpha = Math.min(255f, mAlpha + 35f);
+                // Animate smoothly towards target
+                float dx = (mTargetRect.left - mCurrentRect.left) * 0.35f;
+                float dy = (mTargetRect.top - mCurrentRect.top) * 0.35f;
+                float dw = (mTargetRect.right - mCurrentRect.right) * 0.35f;
+                float dh = (mTargetRect.bottom - mCurrentRect.bottom) * 0.35f;
+                float dr = (mTargetRadius - mCurrentRadius) * 0.35f;
+
+                mCurrentRect.left += dx;
+                mCurrentRect.top += dy;
+                mCurrentRect.right += dw;
+                mCurrentRect.bottom += dh;
+                mCurrentRadius += dr;
+
+                if (Math.abs(dx) > 0.5f || Math.abs(dy) > 0.5f || Math.abs(dw) > 0.5f || Math.abs(dh) > 0.5f) {
+                    postInvalidateOnAnimation();
+                }
+            } else {
+                mAlpha = Math.max(0f, mAlpha - 40f);
+                if (mAlpha > 0f) {
+                    postInvalidateOnAnimation();
+                }
+            }
+
+            int alphaInt = (int) mAlpha;
+            mGlowPaint.setAlpha((int) (alphaInt * 0.35f));
+            mBorderPaint.setAlpha(alphaInt);
+
+            canvas.drawRoundRect(mCurrentRect, mCurrentRadius, mCurrentRadius, mGlowPaint);
+            canvas.drawRoundRect(mCurrentRect, mCurrentRadius, mCurrentRadius, mBorderPaint);
         }
     }
 }
