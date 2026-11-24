@@ -388,8 +388,19 @@ public class TvDesktopCursorOverlay {
     private static boolean isToggleKey(int keyCode) {
         return keyCode == KeyEvent.KEYCODE_MENU ||
                keyCode == KeyEvent.KEYCODE_INFO ||
-               keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
-               keyCode == KeyEvent.KEYCODE_PROG_RED;
+               keyCode == KeyEvent.KEYCODE_PROG_RED ||
+               keyCode == KeyEvent.KEYCODE_GUIDE;
+    }
+
+    private static boolean isMediaKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ||
+               keyCode == KeyEvent.KEYCODE_MEDIA_PLAY ||
+               keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE ||
+               keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD ||
+               keyCode == KeyEvent.KEYCODE_MEDIA_REWIND ||
+               keyCode == KeyEvent.KEYCODE_MEDIA_NEXT ||
+               keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS ||
+               keyCode == KeyEvent.KEYCODE_MEDIA_STOP;
     }
 
     /**
