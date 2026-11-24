@@ -1386,4 +1386,162 @@ public class TvDesktopCursorOverlay {
             canvas.drawRoundRect(mCurrentRect, mCurrentRadius, mCurrentRadius, mBorderPaint);
         }
     }
+
+    /**
+     * Hotstar / Netflix TV / Prime Video Interactive On-Screen Display (OSD) Overlay.
+     * Renders responsive bottom timeline, Play/Pause, 10s seek jump, and streaming indicators.
+     */
+    public static class OttTvPlayerOsdView extends View {
+        private final Paint mBgPaint;
+        private final Paint mBorderPaint;
+        private final Paint mTextPaint;
+        private final Paint mAccentPaint;
+        private final Paint mSubtextPaint;
+        private final RectF mBarRect = new RectF();
+        private boolean mIsVisible = false;
+        private boolean mIsPlaying = true;
+        private int mSeekFeedback = 0;
+        private long mSeekFeedbackTime = 0;
+        private float mProgress = 0.35f;
+        private float mAlpha = 0f;
+        private final Handler mOsdHandler = new Handler(Looper.getMainLooper());
+        private final Runnable mHideRunnable = new Runnable() {
+            @Override
+            public void run() {
+                hideOsd();
+            }
+        };
+
+        public OttTvPlayerOsdView(Context context) {
+            super(context);
+            setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT));
+
+            mBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mBgPaint.setColor(Color.parseColor("#E60B0F19"));
+            mBgPaint.setStyle(Paint.Style.FILL);
+
+            mBorderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mBorderPaint.setColor(Color.parseColor("#3300E5FF"));
+            mBorderPaint.setStyle(Paint.Style.STROKE);
+            mBorderPaint.setStrokeWidth(2.0f);
+
+            mAccentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mAccentPaint.setColor(Color.parseColor("#00E5FF"));
+            mAccentPaint.setStyle(Paint.Style.FILL);
+
+            mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mTextPaint.setColor(Color.WHITE);
+            mTextPaint.setTextSize(26.0f);
+            mTextPaint.setFakeBoldText(true);
+
+            mSubtextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mSubtextPaint.setColor(Color.parseColor("#94A3B8"));
+            mSubtextPaint.setTextSize(18.0f);
+        }
+
+        public void showOsd() {
+            mIsVisible = true;
+            mAlpha = 255f;
+            mOsdHandler.removeCallbacks(mHideRunnable);
+            mOsdHandler.postDelayed(mHideRunnable, 3500);
+            postInvalidateOnAnimation();
+        }
+
+        public void hideOsd() {
+            mIsVisible = false;
+            postInvalidateOnAnimation();
+        }
+
+        public void togglePlayPause() {
+            mIsPlaying = !mIsPlaying;
+            showOsd();
+        }
+
+        public void triggerSeek(int seconds) {
+            mSeekFeedback = seconds;
+            mSeekFeedbackTime = SystemClock.uptimeMillis();
+            if (seconds > 0) mProgress = Math.min(1.0f, mProgress + 0.05f);
+            else mProgress = Math.max(0.0f, mProgress - 0.05f);
+            showOsd();
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+            if (!mIsVisible && mAlpha <= 0f) return;
+
+            if (mIsVisible) {
+                mAlpha = Math.min(255f, mAlpha + 30f);
+            } else {
+                mAlpha = Math.max(0f, mAlpha - 25f);
+            }
+            if (mAlpha <= 0f) return;
+
+            int w = getWidth() > 0 ? getWidth() : 1920;
+            int h = getHeight() > 0 ? getHeight() : 1080;
+            float barH = 110f;
+            float barTop = h - barH - 30f;
+            float barLeft = 60f;
+            float barRight = w - 60f;
+            mBarRect.set(barLeft, barTop, barRight, barTop + barH);
+
+            mBgPaint.setAlpha((int) (mAlpha * 0.92f));
+            mBorderPaint.setAlpha((int) (mAlpha * 0.45f));
+            canvas.drawRoundRect(mBarRect, 20f, 20f, mBgPaint);
+            canvas.drawRoundRect(mBarRect, 20f, 20f, mBorderPaint);
+
+            // Play/Pause icon & button
+            float btnCenterY = barTop + barH / 2f;
+            float playLeft = barLeft + 40f;
+            mAccentPaint.setAlpha((int) mAlpha);
+            canvas.drawCircle(playLeft + 24f, btnCenterY, 28f, mAccentPaint);
+
+            Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            iconPaint.setColor(Color.BLACK);
+            iconPaint.setTextSize(24f);
+            iconPaint.setFakeBoldText(true);
+            canvas.drawText(mIsPlaying ? "❚❚" : "▶", playLeft + 16f, btnCenterY + 8f, iconPaint);
+
+            // Jump feedback or standard Rewind/Forward
+            long now = SystemClock.uptimeMillis();
+            boolean isFeedbackActive = (now - mSeekFeedbackTime < 1200) && mSeekFeedback != 0;
+            mTextPaint.setAlpha((int) mAlpha);
+            if (isFeedbackActive) {
+                String feedText = (mSeekFeedback > 0 ? "⏩ +10s Forward" : "⏪ -10s Rewind");
+                canvas.drawText(feedText, playLeft + 80f, btnCenterY + 9f, mTextPaint);
+            } else {
+                canvas.drawText("⏪ 10s   10s ⏩", playLeft + 80f, btnCenterY + 9f, mTextPaint);
+            }
+
+            // Timeline scrubber
+            float lineLeft = playLeft + 280f;
+            float lineRight = barRight - 260f;
+            float lineY = btnCenterY;
+            if (lineRight > lineLeft + 100f) {
+                Paint lineBg = new Paint(Paint.ANTI_ALIAS_FLAG);
+                lineBg.setColor(Color.parseColor("#33FFFFFF"));
+                lineBg.setStrokeWidth(6.0f);
+                lineBg.setStrokeCap(Paint.Cap.ROUND);
+                canvas.drawLine(lineLeft, lineY, lineRight, lineY, lineBg);
+
+                Paint lineProgress = new Paint(Paint.ANTI_ALIAS_FLAG);
+                lineProgress.setColor(Color.parseColor("#00E5FF"));
+                lineProgress.setStrokeWidth(6.0f);
+                lineProgress.setStrokeCap(Paint.Cap.ROUND);
+                float curProgressX = lineLeft + (lineRight - lineLeft) * mProgress;
+                canvas.drawLine(lineLeft, lineY, curProgressX, lineY, lineProgress);
+                canvas.drawCircle(curProgressX, lineY, 8.0f, mAccentPaint);
+            }
+
+            // OTT Badges (4K UHD, Audio & Subtitles)
+            mSubtextPaint.setAlpha((int) mAlpha);
+            canvas.drawText("4K UHD • 5.1 | Audio & Subtitles", barRight - 240f, btnCenterY + 7f, mSubtextPaint);
+
+            if (mAlpha > 0f && mAlpha < 255f) {
+                postInvalidateOnAnimation();
+            }
+        }
+    }
 }
