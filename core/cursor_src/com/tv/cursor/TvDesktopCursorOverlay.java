@@ -11,6 +11,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -834,6 +835,11 @@ public class TvDesktopCursorOverlay {
             return false;
         }
 
+        // Media keys (Play, Pause, Fast Forward, Rewind) must bypass cursor directly to video player
+        if (isMediaKey(code)) {
+            return false;
+        }
+
         if (activeDecor == null) {
             activeDecor = getTopmostDecorView();
         }
@@ -869,6 +875,8 @@ public class TvDesktopCursorOverlay {
                     sPointerView.setTranslationY(sCoords[1]);
                 }
 
+                updateFocusHighlight(activeDecor);
+
                 if (sIsPointerDown) {
                     sHasDragged = true;
                     long now = SystemClock.uptimeMillis();
@@ -880,7 +888,12 @@ public class TvDesktopCursorOverlay {
 
                         MotionEvent move = MotionEvent.obtain(sDownTime, now, MotionEvent.ACTION_MOVE, localX, localY, 0);
                         move.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                        activeDecor.dispatchTouchEvent(move);
+                        sIsSyntheticDispatch = true;
+                        try {
+                            activeDecor.dispatchTouchEvent(move);
+                        } finally {
+                            sIsSyntheticDispatch = false;
+                        }
                     } catch (Throwable ignored) {}
                 }
             } else if (action == KeyEvent.ACTION_UP) {
@@ -915,7 +928,12 @@ public class TvDesktopCursorOverlay {
                     try {
                         MotionEvent down = MotionEvent.obtain(sDownTime, sDownTime, MotionEvent.ACTION_DOWN, localX, localY, 0);
                         down.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                        activeDecor.dispatchTouchEvent(down);
+                        sIsSyntheticDispatch = true;
+                        try {
+                            activeDecor.dispatchTouchEvent(down);
+                        } finally {
+                            sIsSyntheticDispatch = false;
+                        }
                     } catch (Throwable ignored) {}
                 }
             } else if (action == KeyEvent.ACTION_UP) {
@@ -928,11 +946,16 @@ public class TvDesktopCursorOverlay {
                     try {
                         MotionEvent up = MotionEvent.obtain(sDownTime, upTime, MotionEvent.ACTION_UP, localX, localY, 0);
                         up.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-                        upHandled = activeDecor.dispatchTouchEvent(up);
+                        sIsSyntheticDispatch = true;
+                        try {
+                            upHandled = activeDecor.dispatchTouchEvent(up);
+                        } finally {
+                            sIsSyntheticDispatch = false;
+                        }
                     } catch (Throwable ignored) {}
 
-                    // Fallback to direct performClick only if synthetic touch was unhandled and not dragged
-                    if (!sHasDragged && !upHandled) {
+                    // Ensure click always succeeds for clickable view under cursor
+                    if (!sHasDragged) {
                         final View hit = findTopViewUnder(activeDecor, sCoords[0], sCoords[1]);
                         final View clickable = (hit != null) ? findClickableTarget(hit) : null;
 
@@ -944,7 +967,7 @@ public class TvDesktopCursorOverlay {
                                     imm.showSoftInput(clickable, InputMethodManager.SHOW_IMPLICIT);
                                 }
                             } catch (Throwable ignored) {}
-                        } else if (clickable != null && clickable.isClickable()) {
+                        } else if (clickable != null && (!upHandled || (clickable != activeDecor && !isNativeTouchWidget(clickable)))) {
                             sMainHandler.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
@@ -953,7 +976,7 @@ public class TvDesktopCursorOverlay {
                                         clickable.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED);
                                     } catch (Throwable ignored) {}
                                 }
-                            }, 60);
+                            }, 50);
                         }
                     }
                 }
@@ -1023,12 +1046,14 @@ public class TvDesktopCursorOverlay {
 
         @Override
         public boolean dispatchTouchEvent(MotionEvent event) {
-            if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
-                sCoords[0] = event.getX();
-                sCoords[1] = event.getY();
-                if (sPointerView != null) {
-                    sPointerView.setTranslationX(sCoords[0]);
-                    sPointerView.setTranslationY(sCoords[1]);
+            if (!sIsSyntheticDispatch && event != null) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
+                    sCoords[0] = event.getX();
+                    sCoords[1] = event.getY();
+                    if (sPointerView != null) {
+                        sPointerView.setTranslationX(sCoords[0]);
+                        sPointerView.setTranslationY(sCoords[1]);
+                    }
                 }
             }
             return mOriginal != null && mOriginal.dispatchTouchEvent(event);
@@ -1041,12 +1066,14 @@ public class TvDesktopCursorOverlay {
 
         @Override
         public boolean dispatchGenericMotionEvent(MotionEvent event) {
-            if (event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
-                sCoords[0] = event.getX();
-                sCoords[1] = event.getY();
-                if (sPointerView != null) {
-                    sPointerView.setTranslationX(sCoords[0]);
-                    sPointerView.setTranslationY(sCoords[1]);
+            if (!sIsSyntheticDispatch && event != null) {
+                if (event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
+                    sCoords[0] = event.getX();
+                    sCoords[1] = event.getY();
+                    if (sPointerView != null) {
+                        sPointerView.setTranslationX(sCoords[0]);
+                        sPointerView.setTranslationY(sCoords[1]);
+                    }
                 }
             }
             return mOriginal != null && mOriginal.dispatchGenericMotionEvent(event);
