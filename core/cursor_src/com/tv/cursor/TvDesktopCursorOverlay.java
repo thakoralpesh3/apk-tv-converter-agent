@@ -788,8 +788,23 @@ public class TvDesktopCursorOverlay {
                 float bottom = top + target.getHeight() + (pad * 2);
 
                 sFocusHighlightView.setHighlightTarget(left, top, right, bottom, 14.0f);
+
+                // Hotstar / Netflix TV Dynamic Focus Card Zoom
+                View prev = sLastFocusedViewRef.get();
+                if (prev != null && prev != target) {
+                    try { prev.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start(); } catch (Throwable ignored) {}
+                }
+                if (prev != target) {
+                    try { target.animate().scaleX(1.05f).scaleY(1.05f).setDuration(120).start(); } catch (Throwable ignored) {}
+                    sLastFocusedViewRef = new WeakReference<>(target);
+                }
             } else {
                 sFocusHighlightView.clearHighlight();
+                View prev = sLastFocusedViewRef.get();
+                if (prev != null) {
+                    try { prev.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100).start(); } catch (Throwable ignored) {}
+                    sLastFocusedViewRef = new WeakReference<>(null);
+                }
             }
         } catch (Throwable ignored) {}
     }
@@ -846,8 +861,19 @@ public class TvDesktopCursorOverlay {
             return false;
         }
 
-        // Media keys (Play, Pause, Fast Forward, Rewind) must bypass cursor directly to video player
+        // Media keys (Play, Pause, Fast Forward, Rewind) trigger Hotstar / Netflix TV OSD overlay
         if (isMediaKey(code)) {
+            if (sOttTvOsdView != null && action == KeyEvent.ACTION_DOWN) {
+                if (code == KeyEvent.KEYCODE_MEDIA_PLAY || code == KeyEvent.KEYCODE_MEDIA_PAUSE || code == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE) {
+                    sOttTvOsdView.togglePlayPause();
+                } else if (code == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+                    sOttTvOsdView.triggerSeek(10);
+                } else if (code == KeyEvent.KEYCODE_MEDIA_REWIND) {
+                    sOttTvOsdView.triggerSeek(-10);
+                } else {
+                    sOttTvOsdView.showOsd();
+                }
+            }
             return false;
         }
 
