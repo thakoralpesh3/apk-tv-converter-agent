@@ -75,8 +75,10 @@ public class TvDesktopCursorOverlay {
     // Active cursor views
     private static CursorPointerView sPointerView;
     private static FocusHighlightView sFocusHighlightView;
+    private static OttTvPlayerOsdView sOttTvOsdView;
     private static FrameLayout sOverlayLayout;
     private static WeakReference<ViewGroup> sAttachedDecorRef = new WeakReference<>(null);
+    private static WeakReference<View> sLastFocusedViewRef = new WeakReference<>(null);
     private static boolean sIsSyntheticDispatch = false;
 
     // Interaction state
@@ -637,6 +639,13 @@ public class TvDesktopCursorOverlay {
             sFocusHighlightView.setElevation(999998.0f);
         }
 
+        if (sOttTvOsdView == null) {
+            sOttTvOsdView = new OttTvPlayerOsdView(ctx != null ? ctx : sApplication);
+            sOttTvOsdView.setFocusable(false);
+            sOttTvOsdView.setClickable(false);
+            sOttTvOsdView.setElevation(999998.5f);
+        }
+
         if (sPointerView == null) {
             sPointerView = new CursorPointerView(ctx != null ? ctx : sApplication);
             sPointerView.setFocusable(false);
@@ -668,6 +677,7 @@ public class TvDesktopCursorOverlay {
             sOverlayLayout.setClipToPadding(false);
             sOverlayLayout.setElevation(999999.0f);
             sOverlayLayout.addView(sFocusHighlightView);
+            sOverlayLayout.addView(sOttTvOsdView);
             sOverlayLayout.addView(sPointerView);
         }
 
