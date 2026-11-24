@@ -573,7 +573,14 @@ public class TvDesktopCursorOverlay {
 
         Context ctx = topmost.getContext();
 
-        // 1. Create Pointer View if needed
+        // 1. Create Pointer & Focus Highlight Views if needed
+        if (sFocusHighlightView == null) {
+            sFocusHighlightView = new FocusHighlightView(ctx != null ? ctx : sApplication);
+            sFocusHighlightView.setFocusable(false);
+            sFocusHighlightView.setClickable(false);
+            sFocusHighlightView.setElevation(999998.0f);
+        }
+
         if (sPointerView == null) {
             sPointerView = new CursorPointerView(ctx != null ? ctx : sApplication);
             sPointerView.setFocusable(false);
@@ -604,6 +611,7 @@ public class TvDesktopCursorOverlay {
             sOverlayLayout.setClipChildren(false);
             sOverlayLayout.setClipToPadding(false);
             sOverlayLayout.setElevation(999999.0f);
+            sOverlayLayout.addView(sFocusHighlightView);
             sOverlayLayout.addView(sPointerView);
         }
 
